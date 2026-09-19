@@ -1,7 +1,5 @@
 package me.Plugins.TLibs.Objects.API.SubAPI;
 
-import java.util.List;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -72,23 +70,27 @@ public class BlockChecker extends TLibAPI {
 		}
 	}
 
+	/** Tallest furniture hitbox, in blocks, that a click on an upper block is traced down through. */
+	private static final int MAX_FURNITURE_HEIGHT = 4;
+
 	private boolean blockIsFurniture(Block b, String furniture) {
 		if (!b.getType().equals(Material.BARRIER)) return false;
 		if (!(this.getPluginChecker().checkPlugin("ItemsAdder"))) {
 			Bukkit.getLogger().info("[TLibs] ERROR! This operation requires ItemsAdder and LoneLibs!");
 			return false;
 		}
-		List<Entity> nearbyEntities = (List<Entity>) b.getWorld().getNearbyEntities(b.getLocation().clone().add(0.5, 0, 0.5), 0.4, 0.4, 0.4);
-		for (Entity a : b.getWorld().getEntities()) {
-			if (nearbyEntities.contains(a)) {
+		// Tall furniture (hitbox height > 1) only has its item frame in the bottom block, so walk
+		// down the column of barriers until the frame that owns the clicked block is found.
+		Block current = b;
+		for (int depth = 0; depth < MAX_FURNITURE_HEIGHT && current.getType().equals(Material.BARRIER); depth++) {
+			for (Entity a : current.getWorld().getNearbyEntities(current.getLocation().clone().add(0.5, 0, 0.5), 0.4, 0.4, 0.4)) {
 				if (!(a instanceof ItemFrame)) continue;
 				CustomFurniture f = CustomFurniture.byAlreadySpawned(a);
-				if (f != null) {
-					if ((f.getNamespace() + ":" + f.getId()).equalsIgnoreCase(furniture)) {
-						return true;
-					}
+				if (f != null && (f.getNamespace() + ":" + f.getId()).equalsIgnoreCase(furniture)) {
+					return true;
 				}
 			}
+			current = current.getRelative(0, -1, 0);
 		}
 		return false;
 	}
