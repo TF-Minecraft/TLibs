@@ -37,8 +37,11 @@ public class ItemChecker extends TLibAPI{
 			}
 		}
 		if(this.getPluginChecker().checkPlugin("Cooking")) {
-			if(FoodItem.fromItem(i) != null) {
-			return FoodItem.fromItem(i).toString(); //TODO real thing, this doesnt work lol
+			FoodItem food = FoodItem.fromItem(i);
+			if(food != null) {
+				String origin = food.getOrigin() == null ? "" : food.getOrigin();
+				String category = food.getCategory() == null ? "" : food.getCategory();
+				return "c." + category + "(type=" + food.getId() + ";origin=" + origin + ")";
 			}
 		}
 		if(path.split("\\.")[0].equalsIgnoreCase("v") && i.hasItemMeta()) {

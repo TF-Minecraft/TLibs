@@ -12,9 +12,10 @@
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Same layout as ArmourShop / Guides -->
-        <tfmc.refs>D:/Documents/TFMC/ReferenceLibs</tfmc.refs>
-        <tfmc.builds>D:/Documents/TFMC/Builds/TLibs</tfmc.builds>
-        <tfmc.plugins>D:/Documents/TFMC/Workspace/plugins</tfmc.plugins>
+        <tfmc.refs>D:/Dokumenter/My Plugins/Reference Libs</tfmc.refs>
+        <tfmc.builds>D:/Dokumenter/My Plugins/TFMC/TLibs</tfmc.builds>
+        <tfmc.plugins>D:/Dokumenter/My Plugins/TFMC/GunsAndGadgets</tfmc.plugins>
+        <tfmc.cooking>D:/Dokumenter/My Plugins/TFMC/Cooking</tfmc.cooking>
     </properties>
 
     <dependencies>
@@ -82,9 +83,9 @@
         <dependency>
             <groupId>local</groupId>
             <artifactId>Cooking</artifactId>
-            <version>0.1.4</version>
+            <version>0.1.5</version>
             <scope>system</scope>
-            <systemPath>${tfmc.plugins}/cooking-0.1.4-ALPHA.jar</systemPath>
+            <systemPath>${tfmc.cooking}/cooking-0.1.5-ALPHA.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
