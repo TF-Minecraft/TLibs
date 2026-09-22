@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -51,9 +52,16 @@ def download(entry, destination):
             "Accept": "application/vnd.github.raw+json",
             "Authorization": "Bearer " + token,
         })
-        with urllib.request.urlopen(request, timeout=60) as response:
-            with destination.open("wb") as output:
-                shutil.copyfileobj(response, output)
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                with destination.open("wb") as output:
+                    shutil.copyfileobj(response, output)
+        except urllib.error.HTTPError as error:
+            if error.code not in (401, 403, 404) or "fallback" not in entry:
+                raise
+            # Alternate access to the same exact binary, never an API fallback.
+            # The caller checks the original full checksum after either source.
+            download(entry["fallback"], destination)
     else:
         subprocess.run(["gh", "release", "download", entry["tag"], "--repo",
                         entry["repository"], "--pattern", entry["filename"],

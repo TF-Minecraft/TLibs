@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+import urllib.error
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location(
@@ -13,6 +14,25 @@ spec.loader.exec_module(installer)
 
 
 class InstallerTests(unittest.TestCase):
+    def test_private_source_falls_back_only_for_access_errors(self):
+        entry = {"repository": "owner/assets", "asset_path": "tlibs.jar", "ref": "pinned",
+                 "fallback": {"repository": "owner/legacy", "tag": "v1", "filename": "TLibs.jar"}}
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "tlibs.jar"
+            with patch.dict(installer.os.environ, {"GH_TOKEN": "test-token"}), \
+                    patch.object(installer.urllib.request, "urlopen", side_effect=urllib.error.HTTPError(
+                        "https://api.github.com/test", 404, "Not found", None, None)), \
+                    patch.object(installer.subprocess, "run") as run:
+                installer.download(entry, destination)
+                self.assertIn("owner/legacy", run.call_args.args[0])
+            with patch.dict(installer.os.environ, {"GH_TOKEN": "test-token"}), \
+                    patch.object(installer.urllib.request, "urlopen", side_effect=urllib.error.HTTPError(
+                        "https://api.github.com/test", 500, "Server error", None, None)), \
+                    patch.object(installer.subprocess, "run") as run:
+                with self.assertRaises(urllib.error.HTTPError):
+                    installer.download(entry, destination)
+                run.assert_not_called()
+
     def test_reads_only_the_tlibs_dependency_version(self):
         with tempfile.TemporaryDirectory() as directory:
             pom = Path(directory) / "pom.xml"

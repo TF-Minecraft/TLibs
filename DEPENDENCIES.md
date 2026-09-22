@@ -41,13 +41,13 @@ The installer does not launch Minecraft or copy anything to a server.
 | --- | --- | --- |
 | `1.0-legacy-d8062cdca816` | Immutable public Surgery commit | Exact former Surgery, GeigerCounters and DenarEconomy bundled JAR; Java 17 bytecode |
 | `1.0-tfmc-bbac27e3055d` | Pinned private `TF-Minecraft/server-assets` commit | Verified TFMC runtime binary; requires JDK/server Java 25 |
-| `1.0-tfmc-ecddb0e40a4d` | Private `JustinasLa/tfmc-deps`, release `v1` | Existing ActivityTF, RPCharacters and TFMCCore checksum; retained without an API upgrade |
+| `1.0-tfmc-ecddb0e40a4d` | Pinned private ServerAssets commit; original `JustinasLa/tfmc-deps` release `v1` as an alternate source | Exact ActivityTF, RPCharacters and TFMCCore checksum; Java 17 bytecode |
 
 The full SHA-256 values and exact source references live in
-[`tools/artifacts.json`](tools/artifacts.json). The legacy private release must
-be accessible to its existing consumers; if it is unavailable, installation
-fails rather than substituting a different API. `--jar` supports an authorized
-local copy with that same checksum. The version strings identify actual binary
+[`tools/artifacts.json`](tools/artifacts.json). For the legacy private binary, the installer first tries ServerAssets, then
+its original private release if access to ServerAssets is unavailable. Both
+sources must match the same full checksum; a mismatch fails the installation.
+`--jar` supports an authorized local copy with that same checksum. The version strings identify actual binary
 content because these different JARs all advertise plugin version `1.0`.
 
 Consumers that previously used an external, unversioned Windows path now pin the
