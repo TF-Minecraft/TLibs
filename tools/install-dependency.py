@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -30,6 +31,58 @@ def version_from_pom(path):
     if not version or "${" in version:
         raise ValueError(f"Expected a pinned tlibs.version in {path}")
     return version
+
+
+def latest_release():
+    """Resolve GitHub's latest stable release once, then use immutable asset URLs."""
+    headers = {"Accept": "application/vnd.github+json"}
+    if os.environ.get("GH_TOKEN"):
+        headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
+    request = urllib.request.Request(
+        "https://api.github.com/repos/TF-Minecraft/TLibs/releases/latest", headers=headers)
+    with urllib.request.urlopen(request, timeout=60) as response:
+        release = json.load(response)
+    match = re.fullmatch(r"v?([0-9]+\.[0-9]+\.[0-9]+)", release.get("tag_name", ""))
+    if release.get("draft") or release.get("prerelease") or not match:
+        raise ValueError("Latest TLibs release must be a published stable semantic version")
+    version = match.group(1)
+    filename = f"TLibs-{version}.jar"
+    assets = {asset["name"]: asset for asset in release.get("assets", [])}
+    if filename not in assets:
+        raise ValueError(f"Latest TLibs release has no {filename}")
+    asset = assets[filename]
+    digest = asset.get("digest") or ""
+    if re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        checksum = digest.split(":", 1)[1]
+    else:
+        checksum_asset = assets.get(filename + ".sha256") or assets.get("SHA256SUMS")
+        if not checksum_asset:
+            raise ValueError("Latest TLibs release has no SHA-256 digest or checksum asset")
+        with urllib.request.urlopen(checksum_asset["browser_download_url"], timeout=60) as response:
+            lines = response.read().decode("utf-8").splitlines()
+        matches = [fields[0] for line in lines if len(fields := line.split()) == 2
+                   and re.fullmatch(r"[0-9a-f]{64}", fields[0])
+                   and fields[1].lstrip("*") == filename]
+        if len(matches) != 1:
+            raise ValueError("Invalid TLibs release checksum file")
+        checksum = matches[0]
+    return version, {"url": asset["browser_download_url"], "sha256": checksum}
+
+
+def resolved_pom(path, version):
+    """Prepare a CI-only version update without reformatting the consumer POM."""
+    tree = ET.parse(path).getroot()
+    dependency = next((d for d in tree.findall("m:dependencies/m:dependency", NS)
+                       if d.findtext("m:groupId", namespaces=NS) == "me.plugins"
+                       and d.findtext("m:artifactId", namespaces=NS) == "tlibs"), None)
+    if dependency is None or dependency.findtext("m:version", namespaces=NS) != "${tlibs.version}":
+        raise ValueError("Latest mode requires me.plugins:tlibs with version ${tlibs.version}")
+    updated, count = re.subn(r"(<tlibs.version>)[^<]*(</tlibs.version>)",
+                             lambda match: match[1] + version + match[2],
+                             path.read_text(encoding="utf-8"))
+    if count != 1:
+        raise ValueError("Latest mode requires exactly one tlibs.version property")
+    return updated
 
 
 def verify(path, expected):
@@ -106,6 +159,9 @@ def main():
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--pom", type=Path, help="Read the consumer's pinned dependency version")
     selection.add_argument("--version", help="Install a version from artifacts.json")
+    parser.add_argument("--latest", action="store_true",
+                        help="Resolve the latest stable release and update --pom after installation")
+    parser.add_argument("--github-output", type=Path, help="Append resolved version and checksum action outputs")
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--jar", type=Path, help="Use a local JAR; the checksum must still match")
     source.add_argument("--assets", type=Path, help="Use a local server-assets checkout")
@@ -113,16 +169,30 @@ def main():
     parser.add_argument("--maven-repo", type=Path, help="Override Maven's local repository")
     args = parser.parse_args()
     try:
-        version = args.version or version_from_pom(args.pom)
-        catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
-        if version not in catalog:
-            raise ValueError(f"Unknown TLibs version {version!r}; supported: {', '.join(catalog)}")
+        updated_pom = None
+        if args.latest:
+            if not args.pom or args.jar or args.assets:
+                raise ValueError("--latest requires --pom and downloads its release artifact")
+            version, entry = latest_release()
+            updated_pom = resolved_pom(args.pom, version)
+            print(f"Resolved latest stable TLibs: {version} (SHA-256 {entry['sha256']})")
+        else:
+            version = args.version or version_from_pom(args.pom)
+            catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+            if version not in catalog:
+                raise ValueError(f"Unknown TLibs version {version!r}; supported: {', '.join(catalog)}")
+            entry = catalog[version]
         # Resolve sources before changing the subprocess working directory.
         if args.jar:
             args.jar = args.jar.resolve()
         if args.assets:
             args.assets = args.assets.resolve()
-        install(version, catalog[version], args)
+        install(version, entry, args)
+        if updated_pom is not None:
+            args.pom.write_text(updated_pom, encoding="utf-8")
+        if args.github_output:
+            with args.github_output.open("a", encoding="utf-8") as output:
+                output.write(f"version={version}\nsha256={entry['sha256']}\n")
     except (ValueError, OSError, ET.ParseError, subprocess.SubprocessError) as error:
         print(f"TLibs installation failed: {error}", file=sys.stderr)
         return 1

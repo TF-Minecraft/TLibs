@@ -1,18 +1,38 @@
 name: Install TLibs Maven dependency
-description: Install the consumer's checksum-pinned TLibs version in Maven's local repository
+description: Install a checksum-verified pinned or latest stable TLibs release
 inputs:
   pom:
     description: Consumer POM path, relative to the workspace
     default: pom.xml
+  version:
+    description: Use latest for the latest stable release, or pinned for the consumer POM version
+    default: pinned
   token:
-    description: Contents-read token for the private source, when required
+    description: GitHub API token; private pinned sources need Contents-read access
     required: false
+    default: ${{ github.token }}
+outputs:
+  version:
+    description: Exact installed Maven version
+    value: ${{ steps.install.outputs.version }}
+  sha256:
+    description: SHA-256 of the verified JAR
+    value: ${{ steps.install.outputs.sha256 }}
 runs:
   using: composite
   steps:
-    - shell: bash
+    - id: install
+      shell: bash
       env:
         TLIBS_ACTION_PATH: ${{ github.action_path }}
+        TLIBS_VERSION: ${{ inputs.version }}
         TLIBS_POM: ${{ inputs.pom }}
         GH_TOKEN: ${{ inputs.token }}
-      run: python3 "$TLIBS_ACTION_PATH/../../../tools/install-dependency.py" --pom "$GITHUB_WORKSPACE/$TLIBS_POM"
+      run: |
+        args=(--pom "$GITHUB_WORKSPACE/$TLIBS_POM" --github-output "$GITHUB_OUTPUT")
+        case "$TLIBS_VERSION" in
+          latest) args+=(--latest) ;;
+          pinned) ;;
+          *) echo "Unsupported TLibs selection: $TLIBS_VERSION" >&2; exit 1 ;;
+        esac
+        python3 "$TLIBS_ACTION_PATH/../../../tools/install-dependency.py" "${args[@]}"

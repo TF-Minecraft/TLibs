@@ -37,7 +37,7 @@ The installer does not launch Minecraft or copy anything to a server.
 
 ## Current release
 
-All TF-Minecraft consumers use `me.plugins:tlibs:1.1.0`, built from the current
+Local consumer defaults use `me.plugins:tlibs:1.1.0`, built from the current
 TLibs source. Download [TLibs-1.1.0.jar](https://github.com/TF-Minecraft/TLibs/releases/download/v1.1.0/TLibs-1.1.0.jar)
 for the server. Both compilation and server runtime require **Java 25**. Stop the
 server, replace the existing TLibs JAR (do not leave two copies), and restart.
@@ -67,12 +67,40 @@ Consumers that previously used an external, unversioned Windows path now pin the
 verified runtime build. This establishes a reproducible baseline; it is not a
 claim that the unavailable original Windows JAR was byte-identical.
 
-## CI
+## CI: latest stable release
 
-After setting up Java/Maven, call `.github/actions/setup` from this repository
-using its full commit SHA. The action reads `pom.xml` and runs the same installer.
-Pass `token: ${{ secrets.DEPS_TOKEN }}` for private sources. Public releases and legacy builds
-need no secret. Prepare other dependencies separately before the Maven build.
+TF-Minecraft build and release pipelines call the shared action with
+`version: latest`. The action resolves GitHub's **latest published stable release**
+once per build, downloads its versioned JAR and verifies its SHA-256 against the
+GitHub asset digest (or the release checksum file). Draft releases and prereleases
+are excluded. Publishing a new stable release marked latest is the promotion
+step; DEV build artifacts and draft tags do not change consumer builds.
+
+The action installs the actual release version in Maven and updates only the
+`tlibs.version` property in the checked-out consumer POM after installation succeeds.
+Every following Maven command in that job therefore uses that same version.
+No source commit is created, and local builds retain their explicit POM default.
+Failures stop the job rather than silently selecting an older release.
+
+```yaml
+- name: Install latest stable TLibs in Maven
+  uses: TF-Minecraft/TLibs/.github/actions/setup@<full-action-commit-sha>
+  with:
+    version: latest
+```
+
+Keep the action implementation pinned to a full commit SHA; release selection is
+dynamic. Outputs `version` and `sha256`, plus the build log, record the exact input.
+For a reproducible rebuild or rollback, use `version: pinned` (the default) and
+set the POM's `tlibs.version` to a catalogued version. Other private build inputs
+still require their usual credentials. Latest TLibs is public; the action's default
+GitHub token only authenticates the release API request.
+
+To opt into this behavior locally (this edits your POM):
+
+```sh
+python3 ../tlibs/tools/install-dependency.py --pom pom.xml --latest
+```
 
 ## Source builds
 

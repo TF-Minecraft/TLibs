@@ -12,7 +12,31 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
       - run: python3 -m unittest discover -s tests -v
       - name: Verify public artifact and install in an empty Maven repository
         run: python3 tools/install-dependency.py --version 1.0-legacy-d8062cdca816 --maven-repo "$RUNNER_TEMP/tlibs-m2"
+      - name: Prepare consumer fixture
+        run: |
+          cat > "$RUNNER_TEMP/consumer.xml" <<'XML'
+          <project xmlns="http://maven.apache.org/POM/4.0.0">
+            <modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>consumer</artifactId><version>1</version>
+            <properties><tlibs.version>0.0.0</tlibs.version></properties>
+            <dependencies><dependency><groupId>me.plugins</groupId><artifactId>tlibs</artifactId>
+              <version>${tlibs.version}</version><scope>provided</scope></dependency></dependencies>
+          </project>
+          XML
+          cp "$RUNNER_TEMP/consumer.xml" consumer-test.xml
+      - name: Resolve and install latest stable release
+        id: latest
+        uses: ./.github/actions/setup
+        with:
+          version: latest
+          pom: consumer-test.xml
+      - name: Check Maven sees the resolved version
+        env:
+          RESOLVED_TLIBS_VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          mvn -B --no-transfer-progress -f consumer-test.xml help:evaluate \
+            -Dexpression=tlibs.version -Doutput="$RUNNER_TEMP/resolved-version"
+          test "$(cat "$RUNNER_TEMP/resolved-version")" = "$RESOLVED_TLIBS_VERSION"
