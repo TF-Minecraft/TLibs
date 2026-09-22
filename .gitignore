@@ -34,3 +34,6 @@ Thumbs.db
 
 # Downloaded build dependencies
 /libs/*.jar
+
+# Python dependency installer tests
+__pycache__/
