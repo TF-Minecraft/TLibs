@@ -24,7 +24,7 @@ jobs:
       - name: Install shared plugin dependencies
         uses: ./.github/actions/setup-plugins
         with:
-          mode: latest
+          mode: pinned
 
       - name: Prepare pinned dependencies
         env:
