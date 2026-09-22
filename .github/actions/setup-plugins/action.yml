@@ -1,0 +1,33 @@
+name: Install shared TFMC plugin dependencies
+description: Install direct plugin API dependencies from checksum-verified releases
+inputs:
+  pom:
+    description: Consumer POM relative to the workspace
+    default: pom.xml
+  mode:
+    description: latest resolves published releases; pinned uses explicit POM versions
+    default: pinned
+  token:
+    description: Public release API token
+    default: ${{ github.token }}
+  private-token:
+    description: ServerAssets read token for source-unavailable private inputs
+    required: false
+  lock:
+    description: Resolved dependency metadata path, relative to the workspace
+    default: .build/plugin-dependencies.json
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        TFMC_ACTION_PATH: ${{ github.action_path }}
+        TFMC_POM: ${{ inputs.pom }}
+        TFMC_MODE: ${{ inputs.mode }}
+        TFMC_LOCK: ${{ inputs.lock }}
+        GH_TOKEN: ${{ inputs.token }}
+        TFMC_PRIVATE_TOKEN: ${{ inputs.private-token }}
+      run: |
+        python3 "$TFMC_ACTION_PATH/../../../tools/install-plugins.py" \
+          --pom "$GITHUB_WORKSPACE/$TFMC_POM" --mode "$TFMC_MODE" \
+          --lock "$GITHUB_WORKSPACE/$TFMC_LOCK"
