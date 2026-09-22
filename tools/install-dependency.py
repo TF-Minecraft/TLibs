@@ -33,7 +33,8 @@ def version_from_pom(path):
     return version
 
 
-def release_artifact(repository, filename_pattern, version=None, allow_prerelease=False):
+def release_artifact(repository, filename_pattern, version=None, allow_prerelease=False,
+                     legacy_filename_patterns=()):
     """Resolve one published release and the exact checksum of its plugin JAR."""
     headers = {"Accept": "application/vnd.github+json"}
     if os.environ.get("GH_TOKEN"):
@@ -54,10 +55,12 @@ def release_artifact(repository, filename_pattern, version=None, allow_prereleas
     resolved = match.group(1)
     if version and version != resolved:
         raise ValueError(f"Release version mismatch: expected {version}, got {resolved}")
-    filename = filename_pattern.format(version=resolved)
+    filenames = [pattern.format(version=resolved)
+                 for pattern in (filename_pattern, *legacy_filename_patterns)]
     assets = {asset["name"]: asset for asset in release.get("assets", [])}
-    if filename not in assets:
-        raise ValueError(f"{repository} release {resolved} has no {filename}")
+    filename = next((name for name in filenames if name in assets), None)
+    if filename is None:
+        raise ValueError(f"{repository} release {resolved} has no {filenames[0]}")
     asset = assets[filename]
     digest = asset.get("digest") or ""
     if re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
@@ -79,7 +82,8 @@ def release_artifact(repository, filename_pattern, version=None, allow_prereleas
 
 def latest_release():
     """Preserve the standalone TLibs installer's stable-release selection."""
-    return release_artifact("TF-Minecraft/TLibs", "TLibs-{version}.jar")
+    return release_artifact("TF-Minecraft/TLibs", "tlibs-{version}.jar",
+                            legacy_filename_patterns=("TLibs-{version}.jar",))
 
 
 def resolved_pom(path, version):

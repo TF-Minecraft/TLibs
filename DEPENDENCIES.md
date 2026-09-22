@@ -62,6 +62,11 @@ python3 tools/install-plugins.py --pom pom.xml --mode pinned
 mvn clean install
 ```
 
-The runtime artifact is `target/TLibs-2.0.0.jar`. Its plugin descriptor receives
+The runtime artifact is `target/tlibs-2.0.0.jar`. Its plugin descriptor receives
 the Maven version. Build and deploy consumers with matching provider versions.
 These commands build artifacts; they do not modify a running Minecraft server.
+
+Release JAR names use a lowercase alphanumeric plugin name followed by the version.
+The catalog prefers the canonical filename and accepts only explicitly listed legacy
+filenames during migration. Maven coordinates and Bukkit plugin identifiers remain
+stable; a filename change does not rename a server data directory.

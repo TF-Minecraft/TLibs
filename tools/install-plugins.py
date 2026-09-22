@@ -57,7 +57,8 @@ def prepare(pom, mode, args, catalog):
         else:
             version, entry = installer.release_artifact(
                 definition["repository"], definition["filename"],
-                None if mode == "latest" else pinned, definition.get("allow_prerelease", False))
+                None if mode == "latest" else pinned, definition.get("allow_prerelease", False),
+                legacy_filename_patterns=definition.get("legacy_filenames", ()))
         previous_token = os.environ.get("GH_TOKEN")
         try:
             if private_input and not options.assets:
