@@ -112,9 +112,12 @@ The installer does not launch Minecraft or copy anything to a server.
 
 ## Current release
 
-Local consumer defaults use `me.plugins:tlibs:1.1.0`, built from the current
-TLibs source. Download [TLibs-1.1.0.jar](https://github.com/TF-Minecraft/TLibs/releases/download/v1.1.0/TLibs-1.1.0.jar)
-for the server. Both compilation and server runtime require **Java 25**. Stop the
+Java 21 / Minecraft 1.21.10 compatibility is provided by the new 1.1.1 release.
+The older 1.1.0 release remains unchanged for rollback.
+
+Java 21 consumers use `me.plugins:tlibs:1.1.1`, built from the current
+TLibs source. Download [TLibs-1.1.1.jar](https://github.com/TF-Minecraft/TLibs/releases/download/v1.1.1/TLibs-1.1.1.jar)
+for the server. Both compilation and server runtime require **Java 21**. Stop the
 server, replace the existing TLibs JAR (do not leave two copies), and restart.
 The installer downloads this public release without private-repository credentials.
 
@@ -179,7 +182,7 @@ python3 ../tlibs/tools/install-dependency.py --pom pom.xml --latest
 
 ## TLibs source builds
 
-The source coordinates are `me.plugins:tlibs:1.1.0`. With Java 25, install its
+The source coordinates are `me.plugins:tlibs:1.1.1`. With Java 21, install its
 provided Cooking and GunsAndGadgets APIs, prepare the remaining third-party inputs,
 and build:
 
@@ -189,7 +192,7 @@ GH_TOKEN="$(gh auth token)" bash .github/scripts/prepare-release.sh
 mvn clean verify
 ```
 
-Output is `target/TLibs-1.1.0.jar`; `plugin.yml` receives the same Maven version.
+Output is `target/TLibs-1.1.1.jar`; `plugin.yml` receives the same Maven version.
 Packaging never copies the JAR into a developer's server directory. The optional
 integrations remain external; only Commons Lang and SQLite are shaded.
 See [RELEASE.md](RELEASE.md) for the original 1.1.0 release inputs and validation.

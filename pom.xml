@@ -6,11 +6,11 @@
 
     <groupId>me.plugins</groupId>
     <artifactId>tlibs</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 
     <properties>
-        <cooking.version>0.1.5-ALPHA</cooking.version>
-        <gunsandgadgets.version>1.0.6</gunsandgadgets.version>
+        <cooking.version>0.1.6-ALPHA</cooking.version>
+        <gunsandgadgets.version>1.0.7</gunsandgadgets.version>
         <project.build.outputTimestamp>2026-09-22T00:00:00Z</project.build.outputTimestamp>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
