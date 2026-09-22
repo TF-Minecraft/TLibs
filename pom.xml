@@ -12,10 +12,17 @@
         <cooking.version>0.1.5-ALPHA</cooking.version>
         <gunsandgadgets.version>1.0.6</gunsandgadgets.version>
         <project.build.outputTimestamp>2026-09-22T00:00:00Z</project.build.outputTimestamp>
-        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Same layout as ArmourShop / Guides -->
     </properties>
+
+    <repositories>
+        <repository>
+            <id>spigot-snapshots</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -29,11 +36,10 @@
             <version>3.49.1.0</version>
         </dependency>
         <dependency>
-            <groupId>local</groupId>
+            <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.21.8</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/spigot-api.jar</systemPath>
+            <version>1.21.10-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.md-5</groupId>
@@ -174,7 +180,7 @@
                 <version>3.2.5</version>
                 <configuration>
                     <classpathDependencyExcludes>
-                        <classpathDependencyExclude>local:spigot-api</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.spigotmc:spigot-api</classpathDependencyExclude>
                         <classpathDependencyExclude>net.md-5:bungeecord-chat</classpathDependencyExclude>
                         <classpathDependencyExclude>local:ItemsAdder</classpathDependencyExclude>
                         <classpathDependencyExclude>local:MMOItems</classpathDependencyExclude>
