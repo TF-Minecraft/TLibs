@@ -27,7 +27,7 @@ public class ArmorMerger extends TLibAPI{
 		this.initialize(api.getServer());
 		this.api = api;
 	}
-	@SuppressWarnings("null")
+	@SuppressWarnings({"deprecation", "null"})
 	public ItemStack merge(ItemStack item, Optional<String> name, String s) {
 		ItemAPI api = TLibs.getItemAPI();
 		ItemStack skin = new ItemStack(Material.EMERALD, 1);
