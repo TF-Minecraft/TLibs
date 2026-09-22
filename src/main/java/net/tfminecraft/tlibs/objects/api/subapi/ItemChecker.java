@@ -1,5 +1,7 @@
 package net.tfminecraft.tlibs.objects.api.subapi;
 
+import net.tfminecraft.tlibs.util.LegacyModelData;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,7 +49,7 @@ public class ItemChecker extends TLibAPI{
 		if(path.split("\\.")[0].equalsIgnoreCase("v") && i.hasItemMeta()) {
 			ItemMeta meta = i.getItemMeta();
 			boolean hasName = meta.hasDisplayName();
-			boolean hasModel = meta.hasCustomModelData();
+			boolean hasModel = LegacyModelData.has(meta);
 
 			if (hasName || hasModel) {
 				StringBuilder sb = new StringBuilder("modeled.(");
@@ -56,7 +58,7 @@ public class ItemChecker extends TLibAPI{
 					sb.append(";name=").append(meta.getDisplayName());
 				}
 				if (hasModel) {
-					sb.append(";model=").append(meta.getCustomModelData());
+					sb.append(";model=").append(LegacyModelData.get(meta));
 				}
 				sb.append(")");
 				return sb.toString();
@@ -152,14 +154,14 @@ public class ItemChecker extends TLibAPI{
 
 			// Check model
 			if (attributes.containsKey("model")) {
-				if (!item.getItemMeta().hasCustomModelData()) return false;
+				if (!LegacyModelData.has(item.getItemMeta())) return false;
 				int expectedModel;
 				try {
 					expectedModel = Integer.parseInt(attributes.get("model"));
 				} catch (NumberFormatException e) {
 					return false;
 				}
-				int actualModel = item.getItemMeta().getCustomModelData();
+				int actualModel = LegacyModelData.get(item.getItemMeta());
 				if (actualModel != expectedModel) return false;
 			}
 

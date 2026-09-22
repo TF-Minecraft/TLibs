@@ -37,38 +37,33 @@
         <dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-chat</artifactId>
-            <version>1.20-R0.1</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/BungeeCord.jar</systemPath>
+            <version>1.20-R0.1-tfmc-3bc6fa2477eb</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>local</groupId>
             <artifactId>ItemsAdder</artifactId>
-            <version>3.5.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/ItemsAdder_3.5.0-r2.jar</systemPath>
+            <version>3.5.0-tfmc-0116d714822b</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>local</groupId>
             <artifactId>MMOItems</artifactId>
-            <version>6.10</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/MMOItems-6.10.jar</systemPath>
+            <version>6.10-tfmc-c84700df5942</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>local</groupId>
             <artifactId>MythicLib</artifactId>
-            <version>1.7</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/MythicLib-1.7.jar</systemPath>
+            <version>1.7-tfmc-660ff2a6ec86</version>
+            <scope>provided</scope>
         </dependency>
         <!-- Compile-time only; NBT-API plugin provides at runtime -->
         <dependency>
             <groupId>local</groupId>
             <artifactId>item-nbt-api-plugin</artifactId>
-            <version>2.15.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/item-nbt-api-plugin-2.15.0.jar</systemPath>
+            <version>2.15.0-tfmc-a5f593d6214b</version>
+            <scope>provided</scope>
         </dependency>
         <!-- Compile-time APIs; installed from verified plugin releases -->
         <dependency>
@@ -158,6 +153,9 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                            </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <relocations>
                                 <relocation>
@@ -165,7 +163,28 @@
                                     <shadedPattern>net.tfminecraft.tlibs.shaded.lang3</shadedPattern>
                                 </relocation>
                             </relocations>
+                            <!-- The shaded plugin is not a JPMS module. -->
                             <filters>
+                                <!-- Keep the plugin manifest; dependency manifests describe separate JARs. -->
+                                <filter>
+                                    <artifact>org.apache.commons:commons-lang3</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.xerial:sqlite-jdbc</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/**/module-info.class</exclude>
+                                    </excludes>
+                                </filter>
                                 <filter>
                                     <artifact>org.apache.commons:commons-lang3</artifact>
                                     <includes>

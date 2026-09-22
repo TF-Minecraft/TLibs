@@ -1,5 +1,7 @@
 package net.tfminecraft.tlibs.objects.api.subapi;
 
+import net.tfminecraft.tlibs.util.LegacyModelData;
+
 
 import java.util.Optional;
 
@@ -12,7 +14,6 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import net.tfminecraft.tlibs.TLibs;
-import net.tfminecraft.tlibs.enums.APIType;
 import net.tfminecraft.tlibs.objects.TLibAPI;
 import net.tfminecraft.tlibs.objects.api.ItemAPI;
 import net.tfminecraft.gunsandgadgets.GunsAndGadgets;
@@ -28,14 +29,14 @@ public class ArmorMerger extends TLibAPI{
 	}
 	@SuppressWarnings("null")
 	public ItemStack merge(ItemStack item, Optional<String> name, String s) {
-		ItemAPI api = (ItemAPI) TLibs.getApiInstance(APIType.ITEM_API);
+		ItemAPI api = TLibs.getItemAPI();
 		ItemStack skin = new ItemStack(Material.EMERALD, 1);
 		if(s.split("\\(")[0].equalsIgnoreCase("localmodel")) {
 			String info = s.split("\\(")[1].replace(")", "");
 			try {
 				skin = new ItemStack(Material.valueOf(info.split("\\.")[0].toUpperCase()), 1);
 				ItemMeta m = skin.getItemMeta();
-				m.setCustomModelData(Integer.parseInt(info.split("\\.")[1]));
+				LegacyModelData.set(m, Integer.parseInt(info.split("\\.")[1]));
 				skin.setItemMeta(m);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -74,15 +75,15 @@ public class ArmorMerger extends TLibAPI{
 				item = ItemSkinPreserver.writeIaTag(item, namespace, id);
 			}
 		}
-		if(skin.getItemMeta().hasCustomModelData()) {
-			item = ItemSkinPreserver.writeAmodel(item, skin.getItemMeta().getCustomModelData());
+		if(LegacyModelData.has(skin.getItemMeta())) {
+			item = ItemSkinPreserver.writeAmodel(item, LegacyModelData.get(skin.getItemMeta()));
 		}
 		ItemMeta skinMeta = skin.getItemMeta();
 		Color leatherColor = null;
 		if(skin.getType().toString().toLowerCase().contains("leather") && skinMeta instanceof LeatherArmorMeta ls) {
 			leatherColor = ls.getColor();
 		}
-		Integer cmd = skinMeta.hasCustomModelData() ? skinMeta.getCustomModelData() : null;
+		Integer cmd = LegacyModelData.has(skinMeta) ? LegacyModelData.get(skinMeta) : null;
 		ItemSkinPreserver.applyAppearance(item, skin.getType(), cmd, leatherColor);
 		if(name.isPresent()) {
 			ItemMeta m = item.getItemMeta();

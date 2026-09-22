@@ -229,7 +229,10 @@ class ArmorListener implements Listener{
 			if(armorEquipEvent.isCancelled()){
 				ItemStack i = event.getBrokenItem().clone();
 				i.setAmount(1);
-				i.setDurability((short) (i.getDurability() - 1));
+				if (i.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable damageable) {
+					damageable.setDamage((short) ((short) damageable.getDamage() - 1));
+					i.setItemMeta(damageable);
+				}
 				if(type.equals(ArmorType.HELMET)){
 					p.getInventory().setHelmet(i);
 				}else if(type.equals(ArmorType.CHESTPLATE)){

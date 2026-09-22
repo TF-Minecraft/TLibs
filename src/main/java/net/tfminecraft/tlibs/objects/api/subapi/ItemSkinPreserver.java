@@ -1,5 +1,7 @@
 package net.tfminecraft.tlibs.objects.api.subapi;
 
+import net.tfminecraft.tlibs.util.LegacyModelData;
+
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -48,11 +50,11 @@ public final class ItemSkinPreserver {
 		ItemMeta oldMeta = oldItem.getItemMeta();
 		ItemMeta resultMeta = result.getItemMeta();
 		if (oldMeta != null && resultMeta != null) {
-			if (oldMeta.hasCustomModelData()) {
-				resultMeta.setCustomModelData(oldMeta.getCustomModelData());
+			if (LegacyModelData.has(oldMeta)) {
+				LegacyModelData.set(resultMeta, LegacyModelData.get(oldMeta));
 			} else if (oldNbt.hasTag("amodel")) {
 				try {
-					resultMeta.setCustomModelData(Integer.parseInt(oldNbt.getString("amodel")));
+					LegacyModelData.set(resultMeta, Integer.parseInt(oldNbt.getString("amodel")));
 				} catch (NumberFormatException ignored) {
 				}
 			}
@@ -89,7 +91,7 @@ public final class ItemSkinPreserver {
 		ItemStack updated = nbt.toItem();
 		ItemMeta meta = updated.getItemMeta();
 		if (meta != null) {
-			meta.setCustomModelData(customModelData);
+			LegacyModelData.set(meta, customModelData);
 			updated.setItemMeta(meta);
 		}
 		return updated;
@@ -110,7 +112,7 @@ public final class ItemSkinPreserver {
 			return;
 		}
 		if (customModelData != null) {
-			meta.setCustomModelData(customModelData);
+			LegacyModelData.set(meta, customModelData);
 		}
 		if (leatherColor != null && meta instanceof LeatherArmorMeta leather) {
 			leather.setColor(leatherColor);
