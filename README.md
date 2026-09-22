@@ -1,30 +1,24 @@
-# tlibs
+# TLibs
 
-Technical documentation is maintained in [TF-Minecraft/Docs](https://github.com/TF-Minecraft/Docs/blob/main/projects/TLibs/README.md).
+> Shared item handling and plugin foundations for TF-Minecraft.
 
-Use that project index for setup, configuration, architecture, integration and testing guides. This repository contains the source and project-specific assets.
+TLibs is a supporting library plugin used throughout the TF-Minecraft ecosystem. It gives gameplay plugins a common way to recognize and create items, work with custom blocks, and carry important item details through supported changes.
 
-Shared Maven dependency setup: [DEPENDENCIES.md](DEPENDENCIES.md).
+Players encounter its effects through the plugins that depend on it: custom equipment, crafting ingredients, item skins, and socketed upgrades can share the same underlying item handling.
 
-## Builds and releases
+## Features
 
-With `GH_TOKEN` set for ServerAssets read access, run `bash .github/scripts/prepare-release.sh` and `mvn clean verify`. PR builds run unit tests and publish UTC `DEV-YYYYMMDD-HHmm` JARs. Numeric tags matching the Maven version create draft releases. See the [shared pipeline guide](https://github.com/TF-Minecraft/Docs/blob/main/PIPELINES.md).
+- **Common item recognition** — shared handling for vanilla items and supported custom-item sources, including MMOItems and ItemsAdder.
+- **Custom block support** — recognizes vanilla blocks, ItemsAdder blocks, and supported furniture hitboxes.
+- **Equipment appearance preservation** — carries supported skin and appearance information through item rebuilding.
+- **Tiered socket handling** — shared rules for socket categories and the gems or runes applied to them.
+- **Equipment events** — exposes armour equip changes so other plugins can respond consistently.
+- **Shared persistence and utilities** — provides database support and common text, time, and location helpers for dependent plugins.
 
-## Shared plugin dependencies
+TLibs supports the gameplay plugins that provide the player-facing experiences, keeping common behavior in one place.
 
-Build and release workflows install checksum-verified plugin releases through
-[TLibs' shared installer](https://github.com/TF-Minecraft/TLibs/blob/main/DEPENDENCIES.md).
-CI selects the latest published versions; local builds use the explicit Maven
-version properties. Shared plugins use `provided` scope and remain separate
-server plugins. Each build records exact versions and checksums in
-`.build/plugin-dependencies.json` alongside its JAR.
+## Documentation
 
-From this checkout, with the TLibs repository next to it:
+[Project documentation](https://github.com/TF-Minecraft/Docs/blob/main/projects/TLibs/README.md)
 
-```sh
-python3 ../tlibs/tools/install-plugins.py --pom pom.xml
-```
-
-Prepare any remaining third-party inputs with `.github/scripts/prepare-release.sh`
-before running Maven. Any source-unavailable inputs remain private and checksum-pinned wherever declared; see the installer
-documentation for authentication and reproducible rebuilds.
+Technical documentation is maintained in [TF-Minecraft/Docs](https://github.com/TF-Minecraft/Docs).
