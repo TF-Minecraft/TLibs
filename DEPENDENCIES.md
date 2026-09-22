@@ -41,17 +41,25 @@ checksums, sources and selection modes. Consumer workflows preserve it with the
 build artifacts and release metadata. Keep the action pinned to a full commit;
 publishing a release promotes its API to the next consumer build.
 
-## Source unavailable
+## Public releases and legacy inputs
 
-MusicalInstruments 2.5 remains a checksum-pinned private ServerAssets input in
-both modes. Its current source is 2.4 and lacks ActivityTF's InstrumentPlayEvent.
-AdvancedCrafting now resolves public source-built releases (starting at 1.2.2).
-Its former private 1.2.1 input is retained only for explicitly pinned rollback;
-latest mode always selects its published release.
-Do not publish these binaries publicly or substitute incompatible source builds.
-Supply `TFMC_PRIVATE_TOKEN` with Contents read access to ServerAssets, or pass
-`--assets ../server-assets` for a local checkout. Public release requests use the
-separate `GH_TOKEN` (the action defaults to `github.token`).
+All current shared plugin dependencies have public source-built releases.
+MusicalInstruments 2.5 now resolves from its public repository and supplies the
+InstrumentPlayEvent API used by ActivityTF. AdvancedCrafting resolves public
+releases starting at 1.2.2; its former private 1.2.1 input is retained only for
+explicitly pinned rollback. Latest mode selects published releases.
+
+The former private MusicalInstruments 2.5 JAR remains in ServerAssets. Its compiled
+implementation matches the source-built release after excluding debug metadata;
+its archive checksum differs. To rebuild with those exact old bytes, use the
+previous installer commit `7afa185bee605908a99ac55288ed27a3babbad62` with pinned
+mode and private access. The current installer uses the public 2.5 release in
+both pinned and latest mode.
+
+Legacy private inputs require `TFMC_PRIVATE_TOKEN` with Contents read access to
+ServerAssets, or `--assets ../server-assets`. Public release requests use the
+separate `GH_TOKEN` (the action defaults to `github.token`). Other third-party
+private build inputs retain their own preparation steps and credentials.
 
 ## Rebuild and rollback
 
