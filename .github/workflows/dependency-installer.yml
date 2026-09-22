@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: '21'
       - run: python3 -m unittest discover -s tests -v
       - name: Verify public artifact and install in an empty Maven repository
         run: python3 tools/install-dependency.py --version 1.0-legacy-d8062cdca816 --maven-repo "$RUNNER_TEMP/tlibs-m2"
