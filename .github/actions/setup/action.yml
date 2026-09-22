@@ -1,0 +1,18 @@
+name: Install TLibs Maven dependency
+description: Install the consumer's checksum-pinned TLibs version in Maven's local repository
+inputs:
+  pom:
+    description: Consumer POM path, relative to the workspace
+    default: pom.xml
+  token:
+    description: Contents-read token for the private source, when required
+    required: false
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        TLIBS_ACTION_PATH: ${{ github.action_path }}
+        TLIBS_POM: ${{ inputs.pom }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: python3 "$TLIBS_ACTION_PATH/../../../tools/install-dependency.py" --pom "$GITHUB_WORKSPACE/$TLIBS_POM"

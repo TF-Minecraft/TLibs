@@ -1,0 +1,21 @@
+{
+  "1.0-legacy-d8062cdca816": {
+    "sha256": "d8062cdca816392d29275a96d53a912d27300a098bebc3727fcb6c983fe1ed37",
+    "java": 17,
+    "asset_path": "jars/d8062cdca816/TLibs-1.0.3.jar",
+    "url": "https://raw.githubusercontent.com/TF-Minecraft/Surgery/191bb0191d0c47e1ffbdb9e31824f80177037a8e/libs/TLibs.jar"
+  },
+  "1.0-tfmc-bbac27e3055d": {
+    "sha256": "bbac27e3055d135a4a7f6164ace5e32b7e6275cc8387575a8c8e1809fdc555fd",
+    "java": 25,
+    "asset_path": "runtime/plugins/TLibs.jar",
+    "repository": "TF-Minecraft/ServerAssets",
+    "ref": "a8a0efde5c58ef77d5ca085e422aa2c3e9565c5e"
+  },
+  "1.0-tfmc-ecddb0e40a4d": {
+    "sha256": "ecddb0e40a4da152f2637ee0e985c7451a8ec222fdc496f94f8db5165551a970",
+    "repository": "JustinasLa/tfmc-deps",
+    "tag": "v1",
+    "filename": "TLibs-1.0.jar"
+  }
+}
