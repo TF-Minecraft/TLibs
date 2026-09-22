@@ -1,5 +1,7 @@
 import argparse
 import hashlib
+import io
+import json
 import importlib.util
 from pathlib import Path
 import tempfile
@@ -14,6 +16,86 @@ spec.loader.exec_module(installer)
 
 
 class InstallerTests(unittest.TestCase):
+    def release(self, **changes):
+        release = {"tag_name": "v1.2.3", "draft": False, "prerelease": False,
+                   "assets": [{"name": "TLibs-1.2.3.jar", "digest": "sha256:" + "a" * 64,
+                               "browser_download_url": "https://example.test/v1.2.3/TLibs-1.2.3.jar"}]}
+        release.update(changes)
+        return release
+
+    def test_latest_resolves_exact_version_and_asset_digest_without_catalog(self):
+        with patch.object(installer.urllib.request, "urlopen",
+                          return_value=io.BytesIO(json.dumps(self.release()).encode())) as request:
+            version, entry = installer.latest_release()
+        self.assertEqual("1.2.3", version)
+        self.assertEqual("a" * 64, entry["sha256"])
+        self.assertIn("/v1.2.3/", entry["url"])
+        self.assertTrue(request.call_args.args[0].full_url.endswith("/releases/latest"))
+
+    def test_latest_accepts_two_component_tags_supported_by_release_pipeline(self):
+        release = self.release(tag_name="v1.2")
+        release["assets"][0]["name"] = "TLibs-1.2.jar"
+        with patch.object(installer.urllib.request, "urlopen",
+                          return_value=io.BytesIO(json.dumps(release).encode())):
+            self.assertEqual("1.2", installer.latest_release()[0])
+
+    def test_latest_rejects_unpublished_unversioned_and_missing_artifact(self):
+        for changes in ({"draft": True}, {"prerelease": True}, {"tag_name": "latest"},
+                        {"tag_name": "v1.2.3-rc1"}, {"assets": []}):
+            with self.subTest(changes=changes), patch.object(installer.urllib.request, "urlopen",
+                    return_value=io.BytesIO(json.dumps(self.release(**changes)).encode())):
+                with self.assertRaises(ValueError):
+                    installer.latest_release()
+
+    def test_latest_checksum_fallback_supports_both_release_formats(self):
+        for name in ("TLibs-1.2.3.jar.sha256", "SHA256SUMS"):
+            release = self.release()
+            release["assets"][0].pop("digest")
+            release["assets"].append({"name": name, "browser_download_url": "https://example.test/sums"})
+            with self.subTest(name=name), patch.object(installer.urllib.request, "urlopen", side_effect=[
+                    io.BytesIO(json.dumps(release).encode()),
+                    io.BytesIO(("b" * 64 + "  TLibs-1.2.3.jar\n").encode())]):
+                self.assertEqual("b" * 64, installer.latest_release()[1]["sha256"])
+
+    def test_latest_requires_an_unambiguous_matching_checksum(self):
+        release = self.release()
+        release["assets"][0].pop("digest")
+        with patch.object(installer.urllib.request, "urlopen",
+                          return_value=io.BytesIO(json.dumps(release).encode())):
+            with self.assertRaisesRegex(ValueError, "no SHA-256"):
+                installer.latest_release()
+        release["assets"].append({"name": "SHA256SUMS", "browser_download_url": "https://example.test/sums"})
+        for content in ("b" * 64 + "  wrong.jar", ("b" * 64 + "  TLibs-1.2.3.jar\n") * 2):
+            with patch.object(installer.urllib.request, "urlopen", side_effect=[
+                    io.BytesIO(json.dumps(release).encode()), io.BytesIO(content.encode())]):
+                with self.assertRaisesRegex(ValueError, "Invalid TLibs release checksum"):
+                    installer.latest_release()
+
+    def test_latest_updates_only_tlibs_after_success_and_outputs_exact_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pom = Path(directory) / "pom.xml"
+            original = '''<project xmlns="http://maven.apache.org/POM/4.0.0">
+              <version>9.0</version><properties><tlibs.version>1.1.0</tlibs.version></properties>
+              <dependencies><dependency><groupId>me.plugins</groupId><artifactId>tlibs</artifactId>
+              <version>${tlibs.version}</version></dependency></dependencies></project>'''
+            pom.write_text(original)
+            output = Path(directory) / "outputs"
+            with patch.object(installer.sys, "argv", ["installer", "--pom", str(pom), "--latest",
+                                                      "--github-output", str(output)]), \
+                    patch.object(installer, "latest_release", return_value=("1.2.3", {"sha256": "a" * 64})), \
+                    patch.object(installer, "install", side_effect=ValueError("checksum mismatch")):
+                self.assertEqual(1, installer.main())
+                self.assertEqual(original, pom.read_text())
+                self.assertFalse(output.exists())
+            with patch.object(installer.sys, "argv", ["installer", "--pom", str(pom), "--latest",
+                                                      "--github-output", str(output)]), \
+                    patch.object(installer, "latest_release", return_value=("1.2.3", {"sha256": "a" * 64})), \
+                    patch.object(installer, "install") as install:
+                self.assertEqual(0, installer.main())
+                self.assertEqual("1.2.3", install.call_args.args[0])
+                self.assertEqual(original.replace("1.1.0", "1.2.3"), pom.read_text())
+                self.assertIn("version=1.2.3\n", output.read_text())
+
     def test_private_source_falls_back_only_for_access_errors(self):
         entry = {"repository": "owner/assets", "asset_path": "tlibs.jar", "ref": "pinned",
                  "fallback": {"repository": "owner/legacy", "tag": "v1", "filename": "TLibs.jar"}}
