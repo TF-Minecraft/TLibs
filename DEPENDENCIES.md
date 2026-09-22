@@ -134,7 +134,7 @@ claim that the unavailable original Windows JAR was byte-identical.
 
 ## CI: latest stable release
 
-TF-Minecraft build and release pipelines call the shared action with
+Older consumers can call the standalone action with
 `version: latest`. The action resolves GitHub's **latest published stable release**
 once per build, downloads its versioned JAR and verifies its SHA-256 against the
 GitHub asset digest (or the release checksum file). Draft releases and prereleases
@@ -167,22 +167,22 @@ To opt into this behavior locally (this edits your POM):
 python3 ../tlibs/tools/install-dependency.py --pom pom.xml --latest
 ```
 
-## Source builds
+## TLibs source builds
 
-The source coordinates are `me.plugins:tlibs:1.1.0`. Supply the declared
-compile-time API JARs and build with Java 25:
+The source coordinates are `me.plugins:tlibs:1.1.0`. With Java 25, install its
+provided Cooking and GunsAndGadgets APIs, prepare the remaining third-party inputs,
+and build:
 
 ```sh
-mvn -Dtfmc.refs=/path/to/reference-jars \
-    -Dtfmc.plugins=/path/to/gunsandgadgets \
-    -Dtfmc.cooking=/path/to/cooking clean verify
+python3 tools/install-plugins.py --pom pom.xml
+GH_TOKEN="$(gh auth token)" bash .github/scripts/prepare-release.sh
+mvn clean verify
 ```
 
 Output is `target/TLibs-1.1.0.jar`; `plugin.yml` receives the same Maven version.
 Packaging never copies the JAR into a developer's server directory. The optional
 integrations remain external; only Commons Lang and SQLite are shaded.
-GunsAndGadgets 1.0.6 and Cooking 0.1.5-ALPHA provide compile-time APIs.
-See [RELEASE.md](RELEASE.md) for the release inputs and validation.
+See [RELEASE.md](RELEASE.md) for the original 1.1.0 release inputs and validation.
 Do not overwrite a published version: change the Maven version for the next release.
 
 Once a hosted Maven registry and credentials are configured, publish these
