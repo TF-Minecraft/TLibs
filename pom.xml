@@ -11,7 +11,7 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <cooking.version>0.2.0-ALPHA</cooking.version>
+        <cooking.version>0.2.1-ALPHA</cooking.version>
         <gunsandgadgets.version>2.0.0</gunsandgadgets.version>
         <project.build.outputTimestamp>2026-09-22T00:00:00Z</project.build.outputTimestamp>
         <!-- Same layout as ArmourShop / Guides -->
