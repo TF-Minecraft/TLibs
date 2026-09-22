@@ -2,8 +2,7 @@
   "net.tfminecraft:cooking": {
     "property": "cooking.version",
     "repository": "TF-Minecraft/Cooking",
-    "filename": "cooking-{version}.jar",
-    "allow_prerelease": true
+    "filename": "cooking-{version}.jar"
   },
   "net.coreprotect:CoreProtect": {
     "property": "coreprotect.version",
@@ -39,8 +38,7 @@
   "net.tfminecraft:interactiblefurniture": {
     "property": "interactiblefurniture.version",
     "repository": "TF-Minecraft/InteractibleFurniture",
-    "filename": "interactiblefurniture-{version}.jar",
-    "allow_prerelease": true
+    "filename": "interactiblefurniture-{version}.jar"
   },
   "net.tfminecraft:magic": {
     "property": "magic.version",

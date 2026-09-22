@@ -46,8 +46,8 @@ Preserve this file with build artifacts and release metadata.
 
 To select newer dependency versions locally, run the installer with
 `--mode latest`, then review and commit the resulting POM changes. CI continues
-to use the committed versions. Cooking and InteractibleFurniture permit their
-ALPHA/BETA release channels; other managed plugins use stable releases.
+to use the committed versions. Active providers, including Cooking and
+InteractibleFurniture, use stable production releases.
 
 `--maven-repo /path/to/cache` selects an isolated Maven cache. Pass the same path
 to builds with `-Dmaven.repo.local=/path/to/cache`.
