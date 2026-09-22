@@ -46,8 +46,10 @@ def prepare(pom, mode, args, catalog):
     for key, pinned, definition in dependencies(pom, catalog):
         group, artifact = key.split(":")
         options = argparse.Namespace(jar=None, assets=None, mvn=args.mvn, maven_repo=args.maven_repo)
-        if "versions" in definition:
-            # Source-unavailable artifacts stay private and pinned in every mode.
+        private_input = "versions" in definition and (
+            "repository" not in definition or (mode == "pinned" and pinned in definition["versions"]))
+        if private_input:
+            # Source-unavailable inputs stay pinned; known legacy bytes remain usable for rollback.
             if pinned not in definition["versions"]:
                 raise ValueError(f"No verified private input for {key}:{pinned}")
             version, entry = pinned, definition["versions"][pinned]
@@ -58,7 +60,7 @@ def prepare(pom, mode, args, catalog):
                 None if mode == "latest" else pinned, definition.get("allow_prerelease", False))
         previous_token = os.environ.get("GH_TOKEN")
         try:
-            if "versions" in definition and not options.assets:
+            if private_input and not options.assets:
                 private_token = os.environ.get("TFMC_PRIVATE_TOKEN")
                 if not private_token:
                     raise ValueError(f"{key} requires TFMC_PRIVATE_TOKEN or --assets")
@@ -76,7 +78,7 @@ def prepare(pom, mode, args, catalog):
             raise ValueError(f"Expected exactly one {property_name} property")
         resolved.append({"coordinates": f"{key}:{version}", "sha256": entry["sha256"],
                          "source": entry.get("url") or entry.get("repository"),
-                         "selection": "private-pinned" if "versions" in definition else mode})
+                         "selection": "private-pinned" if private_input else mode})
     if mode == "latest":
         pom.write_text(text, encoding="utf-8")
     return resolved

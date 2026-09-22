@@ -43,9 +43,11 @@ publishing a release promotes its API to the next consumer build.
 
 ## Source unavailable
 
-AdvancedCrafting 1.2.1 and MusicalInstruments 2.5 remain checksum-pinned private
-ServerAssets inputs in both modes. AdvancedCrafting source is not yet available;
-MusicalInstruments' current source is 2.4 and lacks ActivityTF's InstrumentPlayEvent.
+MusicalInstruments 2.5 remains a checksum-pinned private ServerAssets input in
+both modes. Its current source is 2.4 and lacks ActivityTF's InstrumentPlayEvent.
+AdvancedCrafting now resolves public source-built releases (starting at 1.2.2).
+Its former private 1.2.1 input is retained only for explicitly pinned rollback;
+latest mode always selects its published release.
 Do not publish these binaries publicly or substitute incompatible source builds.
 Supply `TFMC_PRIVATE_TOKEN` with Contents read access to ServerAssets, or pass
 `--assets ../server-assets` for a local checkout. Public release requests use the

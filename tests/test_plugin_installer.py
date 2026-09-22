@@ -76,6 +76,25 @@ class PluginInstallerTests(unittest.TestCase):
                 self.assertEqual('private-pinned', resolved[0]['selection'])
                 release.assert_not_called()
 
+    def test_public_provider_uses_legacy_private_bytes_only_when_pinned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            pom = Path(directory) / 'pom.xml'
+            _, catalog, args = self.fixture(pom)
+            catalog = {'tfmc:a': dict(catalog['tfmc:a'], versions={
+                '1.0': {'sha256': 'a' * 64, 'repository': 'TF-Minecraft/ServerAssets'}})}
+            with patch.dict(plugins.os.environ, {'TFMC_PRIVATE_TOKEN': 'private-test'}), \
+                    patch.object(plugins.installer, 'release_artifact',
+                                 return_value=('1.2', {'sha256': 'b' * 64})) as release, \
+                    patch.object(plugins.installer, 'install'):
+                old = plugins.prepare(pom, 'pinned', args, catalog)
+                release.assert_not_called()
+                current = plugins.prepare(pom, 'latest', args, catalog)
+                self.assertEqual(1, release.call_count)
+            self.assertEqual('tfmc:a:1.0', old[0]['coordinates'])
+            self.assertEqual('private-pinned', old[0]['selection'])
+            self.assertEqual('tfmc:a:1.2', current[0]['coordinates'])
+            self.assertEqual('latest', current[0]['selection'])
+
     def test_preview_channel_skips_drafts_and_keeps_exact_asset(self):
         release = {'tag_name': 'v0.1.5-ALPHA', 'prerelease': True, 'draft': False,
                    'assets': [{'name': 'cooking-0.1.5-ALPHA.jar',

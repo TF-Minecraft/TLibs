@@ -90,7 +90,9 @@
         "ref": "6a368f76c89e856fa73299d17e2a40c5a1e2f20a",
         "asset_path": "jars/64ea06ea92bf/advancedcrafting-1.2.1.jar"
       }
-    }
+    },
+    "repository": "TF-Minecraft/AdvancedCrafting",
+    "filename": "advancedcrafting-{version}.jar"
   },
   "tfmc.justin:musicalinstruments": {
     "property": "musicalinstruments.version",
