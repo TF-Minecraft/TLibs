@@ -14,8 +14,6 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: python3 -m unittest discover -s tests -v
-      - name: Verify public artifact and install in an empty Maven repository
-        run: python3 tools/install-dependency.py --version 1.0-legacy-d8062cdca816 --maven-repo "$RUNNER_TEMP/tlibs-m2"
       - name: Prepare consumer fixture
         run: |
           cat > "$RUNNER_TEMP/consumer.xml" <<'XML'
@@ -33,6 +31,10 @@ jobs:
         with:
           version: latest
           pom: consumer-test.xml
+      - name: Verify resolved release in an empty Maven repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/install-plugins.py --pom consumer-test.xml --mode pinned --maven-repo "$RUNNER_TEMP/tlibs-m2"
       - name: Check Maven sees the resolved version
         env:
           RESOLVED_TLIBS_VERSION: ${{ steps.latest.outputs.version }}
