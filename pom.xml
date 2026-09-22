@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.plugins</groupId>
@@ -9,20 +9,13 @@
     <version>1.1.1</version>
 
     <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cooking.version>0.1.6-ALPHA</cooking.version>
         <gunsandgadgets.version>1.0.7</gunsandgadgets.version>
         <project.build.outputTimestamp>2026-09-22T00:00:00Z</project.build.outputTimestamp>
-        <maven.compiler.release>21</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Same layout as ArmourShop / Guides -->
     </properties>
-
-    <repositories>
-        <repository>
-            <id>spigot-snapshots</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-    </repositories>
 
     <dependencies>
         <dependency>
@@ -84,7 +77,10 @@
             <version>${gunsandgadgets.version}</version>
             <scope>provided</scope>
             <exclusions>
-                <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -93,7 +89,10 @@
             <version>${cooking.version}</version>
             <scope>provided</scope>
             <exclusions>
-                <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -110,21 +109,31 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <id>spigot-snapshots</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
+
     <build>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
-                <includes><include>plugin.yml</include></includes>
+                <includes>
+                    <include>plugin.yml</include>
+                </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
-                <excludes><exclude>plugin.yml</exclude></excludes>
+                <excludes>
+                    <exclude>plugin.yml</exclude>
+                </excludes>
             </resource>
         </resources>
         <finalName>TLibs-${project.version}</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -193,5 +202,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
