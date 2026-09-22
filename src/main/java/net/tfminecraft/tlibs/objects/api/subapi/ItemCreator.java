@@ -1,5 +1,7 @@
 package net.tfminecraft.tlibs.objects.api.subapi;
 
+import net.tfminecraft.tlibs.util.LegacyModelData;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -99,7 +101,7 @@ public class ItemCreator extends TLibAPI{
 				if (attributes.containsKey("model")) {
 					try {
 						int modelData = Integer.parseInt(attributes.get("model"));
-						meta.setCustomModelData(modelData);
+						LegacyModelData.set(meta, modelData);
 					} catch (NumberFormatException e) {
 						Bukkit.getLogger().warning("[TLibs] Invalid model data in modeled item: " + attributes.get("model"));
 					}
@@ -135,11 +137,11 @@ public class ItemCreator extends TLibAPI{
 		ItemMeta meta = i.getItemMeta();
 		meta.setDisplayName(StringFormatter.formatHex(config.getString("name", "No Name")));
 		if(config.contains("model_data")) {
-			meta.setCustomModelData(config.getInt("model_data"));
+			LegacyModelData.set(meta, config.getInt("model_data"));
 		}
 		if(config.contains("enchants")) {
 			for(String s : config.getStringList("enchants")) {
-				meta.addEnchant(Enchantment.getByKey(NamespacedKey.minecraft(s.split("\\.")[0])), Integer.parseInt(s.split("\\.")[1]), true);
+				meta.addEnchant(org.bukkit.Registry.ENCHANTMENT.get(NamespacedKey.minecraft(s.split("\\.")[0])), Integer.parseInt(s.split("\\.")[1]), true);
 			}
 		}
 		if(config.contains("hide_enchants")) {

@@ -7,7 +7,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 
 import de.tr7zw.nbtapi.NBT;
-import de.tr7zw.nbtapi.NBTItem;
 import de.tr7zw.nbtapi.iface.ReadableItemNBT;
 
 public final class ItemNbtDebug {
@@ -19,19 +18,10 @@ public final class ItemNbtDebug {
 			return "{id:\"minecraft:air\",Count:0b}";
 		}
 		try {
-			NBTItem nbtItem = new NBTItem(item.clone());
-			if (nbtItem.hasNBTData()) {
-				return nbtItem.getCompound().toString();
-			}
-			final String[] fallback = { null };
-			NBT.get(item, (ReadableItemNBT nbt) -> fallback[0] = nbt.toString());
-			if (fallback[0] != null) {
-				return fallback[0];
-			}
+			return NBT.get(item.clone(), (ReadableItemNBT nbt) -> nbt.toString());
 		} catch (Exception ex) {
 			return "{error:\"" + ex.getMessage() + "\"}";
 		}
-		return "{}";
 	}
 
 	public static String pdcSummary(ItemStack item) {
