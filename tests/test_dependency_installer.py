@@ -32,6 +32,13 @@ class InstallerTests(unittest.TestCase):
         self.assertIn("/v1.2.3/", entry["url"])
         self.assertTrue(request.call_args.args[0].full_url.endswith("/releases/latest"))
 
+    def test_latest_accepts_two_component_tags_supported_by_release_pipeline(self):
+        release = self.release(tag_name="v1.2")
+        release["assets"][0]["name"] = "TLibs-1.2.jar"
+        with patch.object(installer.urllib.request, "urlopen",
+                          return_value=io.BytesIO(json.dumps(release).encode())):
+            self.assertEqual("1.2", installer.latest_release()[0])
+
     def test_latest_rejects_unpublished_unversioned_and_missing_artifact(self):
         for changes in ({"draft": True}, {"prerelease": True}, {"tag_name": "latest"},
                         {"tag_name": "v1.2.3-rc1"}, {"assets": []}):

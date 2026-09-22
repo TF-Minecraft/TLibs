@@ -42,9 +42,9 @@ def latest_release():
         "https://api.github.com/repos/TF-Minecraft/TLibs/releases/latest", headers=headers)
     with urllib.request.urlopen(request, timeout=60) as response:
         release = json.load(response)
-    match = re.fullmatch(r"v?([0-9]+\.[0-9]+\.[0-9]+)", release.get("tag_name", ""))
+    match = re.fullmatch(r"v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)", release.get("tag_name", ""))
     if release.get("draft") or release.get("prerelease") or not match:
-        raise ValueError("Latest TLibs release must be a published stable semantic version")
+        raise ValueError("Latest TLibs release must be a published stable numeric version")
     version = match.group(1)
     filename = f"TLibs-{version}.jar"
     assets = {asset["name"]: asset for asset in release.get("assets", [])}
