@@ -15,6 +15,6 @@ jobs:
     with:
       java-version: '25'
       # Exact path, not a glob. {version} is replaced with the tag without v.
-      artifact-path: target/tlibs-{version}.jar
+      artifact-path: target/TLibs-{version}.jar
     secrets:
       DEPS_TOKEN: ${{ secrets.DEPS_TOKEN }}

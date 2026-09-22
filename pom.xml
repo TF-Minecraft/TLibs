@@ -6,9 +6,10 @@
 
     <groupId>me.plugins</groupId>
     <artifactId>tlibs</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
 
     <properties>
+        <project.build.outputTimestamp>2026-09-22T00:00:00Z</project.build.outputTimestamp>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Same layout as ArmourShop / Guides -->
@@ -110,7 +111,7 @@
                 <excludes><exclude>plugin.yml</exclude></excludes>
             </resource>
         </resources>
-        <finalName>${project.artifactId}-${project.version}</finalName>
+        <finalName>TLibs-${project.version}</finalName>
 
         <plugins>
             <plugin>
