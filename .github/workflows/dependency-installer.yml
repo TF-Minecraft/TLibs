@@ -40,3 +40,17 @@ jobs:
           mvn -B --no-transfer-progress -f consumer-test.xml help:evaluate \
             -Dexpression=tlibs.version -Doutput="$RUNNER_TEMP/resolved-version"
           test "$(cat "$RUNNER_TEMP/resolved-version")" = "$RESOLVED_TLIBS_VERSION"
+      - name: Resolve direct shared plugin inputs
+        uses: ./.github/actions/setup-plugins
+        with:
+          mode: latest
+          pom: consumer-test.xml
+      - name: Verify resolved dependency metadata
+        run: |
+          python3 - <<'PYTEST'
+          import json, pathlib
+          resolved = json.loads(pathlib.Path('.build/plugin-dependencies.json').read_text())
+          assert len(resolved) == 1
+          assert resolved[0]['coordinates'].startswith('me.plugins:tlibs:')
+          assert len(resolved[0]['sha256']) == 64
+          PYTEST

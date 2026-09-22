@@ -1,0 +1,108 @@
+{
+  "net.tfminecraft:cooking": {
+    "property": "cooking.version",
+    "repository": "TF-Minecraft/Cooking",
+    "filename": "cooking-{version}.jar",
+    "allow_prerelease": true
+  },
+  "net.coreprotect:CoreProtect": {
+    "property": "coreprotect.version",
+    "repository": "TF-Minecraft/CoreProtect",
+    "filename": "CoreProtect-{version}.jar"
+  },
+  "net.tfminecraft:denareconomy": {
+    "property": "denareconomy.version",
+    "repository": "TF-Minecraft/DenarEconomy",
+    "filename": "denareconomy-{version}.jar"
+  },
+  "net.tfminecraft:games": {
+    "property": "games.version",
+    "repository": "TF-Minecraft/Games",
+    "filename": "games-{version}.jar"
+  },
+  "net.tfminecraft:geiger_counter": {
+    "property": "geiger_counter.version",
+    "repository": "TF-Minecraft/GeigerCounters",
+    "filename": "geiger_counter-{version}.jar"
+  },
+  "net.tfminecraft:gunsandgadgets": {
+    "property": "gunsandgadgets.version",
+    "repository": "TF-Minecraft/GunsAndGadgets",
+    "filename": "gunsandgadgets-{version}.jar"
+  },
+  "net.tfminecraft:interactiblefurniture": {
+    "property": "interactiblefurniture.version",
+    "repository": "TF-Minecraft/InteractibleFurniture",
+    "filename": "interactiblefurniture-{version}.jar",
+    "allow_prerelease": true
+  },
+  "net.tfminecraft:magic": {
+    "property": "magic.version",
+    "repository": "TF-Minecraft/Magic",
+    "filename": "magic-{version}.jar"
+  },
+  "net.tfminecraft:marketblock": {
+    "property": "marketblock.version",
+    "repository": "TF-Minecraft/MarketBlock",
+    "filename": "marketblock-{version}.jar"
+  },
+  "net.tfminecraft:rpcharacters": {
+    "property": "rpcharacters.version",
+    "repository": "TF-Minecraft/RPCharacters",
+    "filename": "rpcharacters-{version}.jar"
+  },
+  "net.tfminecraft:simplefactions": {
+    "property": "simplefactions.version",
+    "repository": "TF-Minecraft/SimpleFactions",
+    "filename": "simplefactions-{version}.jar"
+  },
+  "net.tfminecraft:tfmccore": {
+    "property": "tfmccore.version",
+    "repository": "TF-Minecraft/TFMCCore",
+    "filename": "tfmccore-{version}.jar"
+  },
+  "me.plugins:tlibs": {
+    "property": "tlibs.version",
+    "repository": "TF-Minecraft/TLibs",
+    "filename": "TLibs-{version}.jar"
+  },
+  "net.tfminecraft:vehicleframework": {
+    "property": "vehicleframework.version",
+    "repository": "TF-Minecraft/VehicleFramework",
+    "filename": "vehicleframework-{version}.jar"
+  },
+  "net.tfminecraft:vfbuilders": {
+    "property": "vfbuilders.version",
+    "repository": "TF-Minecraft/VFBuilders",
+    "filename": "vfbuilders-{version}.jar"
+  },
+  "com.nowko:archeology-plugin": {
+    "property": "archeology-plugin.version",
+    "repository": "TF-Minecraft/Archaeo",
+    "filename": "archeology-plugin-{version}.jar"
+  },
+  "net.tfminecraft:advancedcrafting": {
+    "property": "advancedcrafting.version",
+    "versions": {
+      "1.2.1": {
+        "sha256": "64ea06ea92bf22785e6d541dd1b5f550edcdc4610d7a9748a91d715876ac079d",
+        "repository": "TF-Minecraft/ServerAssets",
+        "ref": "6a368f76c89e856fa73299d17e2a40c5a1e2f20a",
+        "asset_path": "jars/64ea06ea92bf/advancedcrafting-1.2.1.jar"
+      }
+    },
+    "repository": "TF-Minecraft/AdvancedCrafting",
+    "filename": "advancedcrafting-{version}.jar"
+  },
+  "tfmc.justin:musicalinstruments": {
+    "property": "musicalinstruments.version",
+    "versions": {
+      "2.5": {
+        "sha256": "aaf20bbeba7963cec543ba1206ca0b1c6304efaa4607f3cb85e6602caa4d2319",
+        "repository": "TF-Minecraft/ServerAssets",
+        "ref": "6a368f76c89e856fa73299d17e2a40c5a1e2f20a",
+        "asset_path": "jars/aaf20bbeba79/musicalinstruments-2.5.jar"
+      }
+    }
+  }
+}

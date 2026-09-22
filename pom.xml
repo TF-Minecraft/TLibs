@@ -9,6 +9,8 @@
     <version>1.1.0</version>
 
     <properties>
+        <cooking.version>0.1.5-ALPHA</cooking.version>
+        <gunsandgadgets.version>1.0.6</gunsandgadgets.version>
         <project.build.outputTimestamp>2026-09-22T00:00:00Z</project.build.outputTimestamp>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -69,20 +71,24 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/libs/item-nbt-api-plugin-2.15.0.jar</systemPath>
         </dependency>
-        <!-- Compile-time only; jars live with server plugins -->
+        <!-- Compile-time APIs; installed from verified plugin releases -->
         <dependency>
-            <groupId>local</groupId>
-            <artifactId>GunsAndGadgets</artifactId>
-            <version>1.0.6</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/gunsandgadgets-1.0.6.jar</systemPath>
+            <groupId>net.tfminecraft</groupId>
+            <artifactId>gunsandgadgets</artifactId>
+            <version>${gunsandgadgets.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>local</groupId>
-            <artifactId>Cooking</artifactId>
-            <version>0.1.5</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/cooking-0.1.5-ALPHA.jar</systemPath>
+            <groupId>net.tfminecraft</groupId>
+            <artifactId>cooking</artifactId>
+            <version>${cooking.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

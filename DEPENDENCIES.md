@@ -1,4 +1,71 @@
-# Using TLibs from Maven
+# Shared plugin dependencies
+
+TFMC plugins declare each shared plugin using its native Maven coordinates and
+`provided` scope. The server supplies those plugins separately. The shared
+installer verifies release JAR checksums and installs minimal Maven POMs, so
+provider build dependencies and cyclic source references do not propagate.
+
+## Build a consumer
+
+With Python 3, Maven and the appropriate JDK on PATH:
+
+```sh
+python3 ../tlibs/tools/install-plugins.py --pom pom.xml --lock .build/plugin-dependencies.json
+# Prepare the remaining third-party inputs, if the consumer requires them:
+GH_TOKEN="$(gh auth token)" bash .github/scripts/prepare-release.sh
+mvn clean verify
+```
+
+Local builds default to the exact versions in the POM. `--mode latest` selects
+published releases and updates the checkout's dependency version properties only
+after all inputs pass verification. CI uses this mode. Stable releases use
+GitHub's latest release selection. Cooking and InteractibleFurniture explicitly
+allow their existing ALPHA/BETA releases; drafts are always excluded. Missing
+releases, assets, credentials or checksum mismatches fail the build.
+
+`tools/plugins.json` is the registry of supported coordinates, release repositories
+and filename patterns. Only direct declared dependencies are installed. This
+handles TLibs/Cooking/GunsAndGadgets and RPCharacters/SimpleFactions cycles without
+recursively building their source or shading their classes into consumers.
+
+```yaml
+- name: Install shared plugin dependencies
+  uses: TF-Minecraft/TLibs/.github/actions/setup-plugins@<full-action-commit-sha>
+  with:
+    mode: latest
+    private-token: ${{ secrets.DEPS_TOKEN }} # Only consumers of the private inputs below
+```
+
+The action writes `.build/plugin-dependencies.json` with exact coordinates,
+checksums, sources and selection modes. Consumer workflows preserve it with the
+build artifacts and release metadata. Keep the action pinned to a full commit;
+publishing a release promotes its API to the next consumer build.
+
+## Source unavailable
+
+MusicalInstruments 2.5 remains a checksum-pinned private ServerAssets input in
+both modes. Its current source is 2.4 and lacks ActivityTF's InstrumentPlayEvent.
+AdvancedCrafting now resolves public source-built releases (starting at 1.2.2).
+Its former private 1.2.1 input is retained only for explicitly pinned rollback;
+latest mode always selects its published release.
+Do not publish these binaries publicly or substitute incompatible source builds.
+Supply `TFMC_PRIVATE_TOKEN` with Contents read access to ServerAssets, or pass
+`--assets ../server-assets` for a local checkout. Public release requests use the
+separate `GH_TOKEN` (the action defaults to `github.token`).
+
+## Rebuild and rollback
+
+Use `--mode pinned` and the versions recorded in a successful build's metadata
+for an exact API selection. Versions coexist in Maven's cache; `--maven-repo`
+selects an isolated cache. Revert a consumer migration commit to restore its
+previous preparation path; retained private inputs are not deleted. This only
+changes builds and does not install plugins on a running server.
+
+The standalone TLibs installer below remains supported for older consumers.
+
+---
+
+## Legacy standalone TLibs installer
 
 Consumers declare `me.plugins:tlibs` with `provided` scope. TLibs remains a
 separate server plugin and is never shaded into its consumers. No consumer needs
@@ -69,7 +136,7 @@ claim that the unavailable original Windows JAR was byte-identical.
 
 ## CI: latest stable release
 
-TF-Minecraft build and release pipelines call the shared action with
+Older consumers can call the standalone action with
 `version: latest`. The action resolves GitHub's **latest published stable release**
 once per build, downloads its versioned JAR and verifies its SHA-256 against the
 GitHub asset digest (or the release checksum file). Draft releases and prereleases
@@ -102,22 +169,22 @@ To opt into this behavior locally (this edits your POM):
 python3 ../tlibs/tools/install-dependency.py --pom pom.xml --latest
 ```
 
-## Source builds
+## TLibs source builds
 
-The source coordinates are `me.plugins:tlibs:1.1.0`. Supply the declared
-compile-time API JARs and build with Java 25:
+The source coordinates are `me.plugins:tlibs:1.1.0`. With Java 25, install its
+provided Cooking and GunsAndGadgets APIs, prepare the remaining third-party inputs,
+and build:
 
 ```sh
-mvn -Dtfmc.refs=/path/to/reference-jars \
-    -Dtfmc.plugins=/path/to/gunsandgadgets \
-    -Dtfmc.cooking=/path/to/cooking clean verify
+python3 tools/install-plugins.py --pom pom.xml
+GH_TOKEN="$(gh auth token)" bash .github/scripts/prepare-release.sh
+mvn clean verify
 ```
 
 Output is `target/TLibs-1.1.0.jar`; `plugin.yml` receives the same Maven version.
 Packaging never copies the JAR into a developer's server directory. The optional
 integrations remain external; only Commons Lang and SQLite are shaded.
-GunsAndGadgets 1.0.6 and Cooking 0.1.5-ALPHA provide compile-time APIs.
-See [RELEASE.md](RELEASE.md) for the release inputs and validation.
+See [RELEASE.md](RELEASE.md) for the original 1.1.0 release inputs and validation.
 Do not overwrite a published version: change the Maven version for the next release.
 
 Once a hosted Maven registry and credentials are configured, publish these

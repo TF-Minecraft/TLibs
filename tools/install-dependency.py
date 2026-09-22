@@ -33,23 +33,31 @@ def version_from_pom(path):
     return version
 
 
-def latest_release():
-    """Resolve GitHub's latest stable release once, then use immutable asset URLs."""
+def release_artifact(repository, filename_pattern, version=None, allow_prerelease=False):
+    """Resolve one published release and the exact checksum of its plugin JAR."""
     headers = {"Accept": "application/vnd.github+json"}
     if os.environ.get("GH_TOKEN"):
         headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
-    request = urllib.request.Request(
-        "https://api.github.com/repos/TF-Minecraft/TLibs/releases/latest", headers=headers)
-    with urllib.request.urlopen(request, timeout=60) as response:
+    endpoint = ("tags/v" + version if version else
+                "?per_page=100" if allow_prerelease else "latest")
+    url = f"https://api.github.com/repos/{repository}/releases"
+    url += endpoint if endpoint.startswith("?") else "/" + endpoint
+    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=60) as response:
         release = json.load(response)
-    match = re.fullmatch(r"v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)", release.get("tag_name", ""))
-    if release.get("draft") or release.get("prerelease") or not match:
-        raise ValueError("Latest TLibs release must be a published stable numeric version")
-    version = match.group(1)
-    filename = f"TLibs-{version}.jar"
+    if isinstance(release, list):
+        release = next((r for r in release if not r.get("draft")), {})
+    pattern = r"v?([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?)"
+    match = re.fullmatch(pattern, release.get("tag_name", ""))
+    if release.get("draft") or not match or (not allow_prerelease and
+            (release.get("prerelease") or "-" in match.group(1))):
+        raise ValueError(f"{repository} must have a published {'versioned' if allow_prerelease else 'stable numeric'} release")
+    resolved = match.group(1)
+    if version and version != resolved:
+        raise ValueError(f"Release version mismatch: expected {version}, got {resolved}")
+    filename = filename_pattern.format(version=resolved)
     assets = {asset["name"]: asset for asset in release.get("assets", [])}
     if filename not in assets:
-        raise ValueError(f"Latest TLibs release has no {filename}")
+        raise ValueError(f"{repository} release {resolved} has no {filename}")
     asset = assets[filename]
     digest = asset.get("digest") or ""
     if re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
@@ -57,7 +65,7 @@ def latest_release():
     else:
         checksum_asset = assets.get(filename + ".sha256") or assets.get("SHA256SUMS")
         if not checksum_asset:
-            raise ValueError("Latest TLibs release has no SHA-256 digest or checksum asset")
+            raise ValueError(f"{repository} release has no SHA-256 digest or checksum asset")
         with urllib.request.urlopen(checksum_asset["browser_download_url"], timeout=60) as response:
             lines = response.read().decode("utf-8").splitlines()
         matches = [fields[0] for line in lines if len(fields := line.split()) == 2
@@ -66,7 +74,12 @@ def latest_release():
         if len(matches) != 1:
             raise ValueError("Invalid TLibs release checksum file")
         checksum = matches[0]
-    return version, {"url": asset["browser_download_url"], "sha256": checksum}
+    return resolved, {"url": asset["browser_download_url"], "sha256": checksum}
+
+
+def latest_release():
+    """Preserve the standalone TLibs installer's stable-release selection."""
+    return release_artifact("TF-Minecraft/TLibs", "TLibs-{version}.jar")
 
 
 def resolved_pom(path, version):
@@ -121,7 +134,7 @@ def download(entry, destination):
                         "--output", str(destination)], check=True, timeout=120)
 
 
-def install(version, entry, args):
+def install(version, entry, args, group="me.plugins", artifact="tlibs"):
     # Running outside a consumer's project also works before its other private
     # dependencies have been prepared. Always supply a clean POM; the binary's
     # embedded POM may contain obsolete absolute systemPath dependencies.
@@ -141,9 +154,9 @@ def install(version, entry, args):
         pom.write_text(
             '<project xmlns="http://maven.apache.org/POM/4.0.0">\n'
             '  <modelVersion>4.0.0</modelVersion>\n'
-            '  <groupId>me.plugins</groupId><artifactId>tlibs</artifactId>\n'
+            f'  <groupId>{group}</groupId><artifactId>{artifact}</artifactId>\n'
             f'  <version>{version}</version><packaging>jar</packaging>\n'
-            '  <description>Checksum-verified TLibs plugin; provided by the server.</description>\n'
+            '  <description>Checksum-verified plugin; provided by the server.</description>\n'
             '</project>\n', encoding="utf-8")
         command = [args.mvn, "-B", "--no-transfer-progress",
                    "org.apache.maven.plugins:maven-install-plugin:3.1.3:install-file",
@@ -151,7 +164,7 @@ def install(version, entry, args):
         if args.maven_repo:
             command.append(f"-Dmaven.repo.local={args.maven_repo.resolve()}")
         subprocess.run(command, cwd=work, check=True, timeout=300)
-    print(f"Installed me.plugins:tlibs:{version} (SHA-256 {entry['sha256']})")
+    print(f"Installed {group}:{artifact}:{version} (SHA-256 {entry['sha256']})")
 
 
 def main():

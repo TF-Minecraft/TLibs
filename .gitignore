@@ -37,3 +37,6 @@ Thumbs.db
 
 # Python dependency installer tests
 __pycache__/
+
+# Resolved build dependency metadata
+.build/
