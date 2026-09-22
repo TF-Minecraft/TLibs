@@ -23,5 +23,11 @@
     "asset_path": "jars/ecddb0e40a4d/TLibs-1.0.jar",
     "repository": "TF-Minecraft/ServerAssets",
     "ref": "3d8c9f9f912477e4e676379382cc40876122b08c"
+  },
+  "1.1.0": {
+    "sha256": "46a9f9567d9e42dae8f646ccc0be5b9d1d21ed7006a21a2bc8f523c46ca95916",
+    "java": 25,
+    "url": "https://github.com/TF-Minecraft/TLibs/releases/download/v1.1.0/TLibs-1.1.0.jar",
+    "asset_path": "jars/46a9f9567d9e/TLibs-1.1.0.jar"
   }
 }
