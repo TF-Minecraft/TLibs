@@ -96,13 +96,7 @@
   },
   "tfmc.justin:musicalinstruments": {
     "property": "musicalinstruments.version",
-    "versions": {
-      "2.5": {
-        "sha256": "aaf20bbeba7963cec543ba1206ca0b1c6304efaa4607f3cb85e6602caa4d2319",
-        "repository": "TF-Minecraft/ServerAssets",
-        "ref": "6a368f76c89e856fa73299d17e2a40c5a1e2f20a",
-        "asset_path": "jars/aaf20bbeba79/musicalinstruments-2.5.jar"
-      }
-    }
+    "repository": "TF-Minecraft/MusicalInstruments",
+    "filename": "musicalinstruments-{version}.jar"
   }
 }
