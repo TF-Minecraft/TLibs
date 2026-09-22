@@ -133,7 +133,7 @@
                 </excludes>
             </resource>
         </resources>
-        <finalName>TLibs-${project.version}</finalName>
+        <finalName>tlibs-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

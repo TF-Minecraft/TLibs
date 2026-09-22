@@ -8,7 +8,10 @@
   "net.coreprotect:CoreProtect": {
     "property": "coreprotect.version",
     "repository": "TF-Minecraft/CoreProtect",
-    "filename": "CoreProtect-{version}.jar"
+    "filename": "coreprotect-{version}.jar",
+    "legacy_filenames": [
+      "CoreProtect-{version}.jar"
+    ]
   },
   "net.tfminecraft:denareconomy": {
     "property": "denareconomy.version",
@@ -23,7 +26,10 @@
   "net.tfminecraft:geiger_counter": {
     "property": "geiger_counter.version",
     "repository": "TF-Minecraft/GeigerCounters",
-    "filename": "geiger_counter-{version}.jar"
+    "filename": "geigercounters-{version}.jar",
+    "legacy_filenames": [
+      "geiger_counter-{version}.jar"
+    ]
   },
   "net.tfminecraft:gunsandgadgets": {
     "property": "gunsandgadgets.version",
@@ -64,7 +70,10 @@
   "me.plugins:tlibs": {
     "property": "tlibs.version",
     "repository": "TF-Minecraft/TLibs",
-    "filename": "TLibs-{version}.jar"
+    "filename": "tlibs-{version}.jar",
+    "legacy_filenames": [
+      "TLibs-{version}.jar"
+    ]
   },
   "net.tfminecraft:vehicleframework": {
     "property": "vehicleframework.version",
@@ -79,7 +88,10 @@
   "com.nowko:archeology-plugin": {
     "property": "archeology-plugin.version",
     "repository": "TF-Minecraft/Archaeo",
-    "filename": "archeology-plugin-{version}.jar"
+    "filename": "archaeo-{version}.jar",
+    "legacy_filenames": [
+      "archeology-plugin-{version}.jar"
+    ]
   },
   "net.tfminecraft:advancedcrafting": {
     "property": "advancedcrafting.version",

@@ -53,6 +53,14 @@ class PluginArtifactTests(unittest.TestCase):
         for name in ("plugin-1.0.jar", "plugin-1.2.3-sources.jar", "plugin-1.2.3-tests.jar"):
             self.assertNotEqual(self.run_check(self.jar(name=name)).returncode, 0)
 
+    def test_rejects_noncanonical_plugin_names(self):
+        for name in ("TLibs-1.2.3.jar", "geiger_counter-1.2.3.jar",
+                     "archeology-plugin-1.2.3.jar", "original-plugin-1.2.3.jar"):
+            with self.subTest(name=name):
+                result = self.run_check(self.jar(name=name))
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("lowercase alphanumeric", result.stderr)
+
     def test_rejects_missing_descriptor_and_corrupt_archive(self):
         path = self.jar(descriptor="README.txt")
         self.assertNotEqual(self.run_check(path).returncode, 0)
