@@ -2,8 +2,7 @@
   "1.1.0": {
     "sha256": "46a9f9567d9e42dae8f646ccc0be5b9d1d21ed7006a21a2bc8f523c46ca95916",
     "java": 25,
-    "url": "https://github.com/TF-Minecraft/TLibs/releases/download/v1.1.0/TLibs-1.1.0.jar",
-    "asset_path": "jars/46a9f9567d9e/TLibs-1.1.0.jar"
+    "url": "https://github.com/TF-Minecraft/TLibs/releases/download/v1.1.0/TLibs-1.1.0.jar"
   },
   "1.1.1": {
     "sha256": "2e0820c984c4fc3c02ab603dfaf5d7b6c5807ee6d7bc27791de2d1153d92a501",
