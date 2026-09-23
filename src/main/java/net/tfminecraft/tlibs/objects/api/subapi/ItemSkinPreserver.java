@@ -32,6 +32,8 @@ public final class ItemSkinPreserver {
 		return nbt.hasTag("ia") || nbt.hasTag("amodel") || hasItemsAdderCompound(item);
 	}
 
+	// This path mutates the existing ItemStack; replacing it would change aliases held by callers.
+	@SuppressWarnings("deprecation")
 	public static ItemStack applyAppearanceFromSkin(ItemStack oldItem, ItemStack result) {
 		NBTItem oldNbt = NBTItem.get(oldItem);
 		NBTItem resultNbt = NBTItem.get(result);
@@ -105,6 +107,8 @@ public final class ItemSkinPreserver {
 		});
 	}
 
+	// This path mutates the existing ItemStack; replacing it would change aliases held by callers.
+	@SuppressWarnings("deprecation")
 	public static void applyAppearance(ItemStack item, Material type, Integer customModelData, Color leatherColor) {
 		item.setType(type);
 		ItemMeta meta = item.getItemMeta();

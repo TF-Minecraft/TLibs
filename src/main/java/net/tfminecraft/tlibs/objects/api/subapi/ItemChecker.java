@@ -24,6 +24,8 @@ public class ItemChecker extends TLibAPI{
 		this.initialize(api.getServer());
 	}
 	
+	// Keep the existing legacy text representation, formatting, and exact-string comparisons.
+	@SuppressWarnings("deprecation")
 	public String getAsStringPath(ItemStack i) {
 		String path = "v."+i.getType().toString().toLowerCase();
 		if(this.getPluginChecker().checkPlugin("MMOItems") && this.getPluginChecker().checkPlugin("MythicLib")) {
@@ -67,6 +69,8 @@ public class ItemChecker extends TLibAPI{
 		return path;
 	}
 
+	// Keep the existing legacy text representation, formatting, and exact-string comparisons.
+	@SuppressWarnings("deprecation")
 	public boolean checkItemWithPath(ItemStack item, String s) {
 		if (item == null || item.getType().isAir() || s == null || s.isBlank()) {
 			return false;

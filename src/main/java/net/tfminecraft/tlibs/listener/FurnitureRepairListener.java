@@ -12,6 +12,8 @@ public class FurnitureRepairListener implements Listener {
 
     public static boolean HIDE_ITEMSADDER_FURNITURE_STANDS = false;
 
+    // Keep the existing legacy text representation, formatting, and exact-string comparisons.
+    @SuppressWarnings("deprecation")
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
         if (!HIDE_ITEMSADDER_FURNITURE_STANDS) return;

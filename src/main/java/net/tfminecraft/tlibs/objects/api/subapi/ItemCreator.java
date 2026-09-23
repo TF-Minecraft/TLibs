@@ -132,6 +132,8 @@ public class ItemCreator extends TLibAPI{
 		return null;
 	}
 	
+	// Preserve configured legacy display-name and lore formatting.
+	@SuppressWarnings({"deprecation"})
 	public ItemStack getItemFromConfig(ConfigurationSection config) {
 		ItemStack i = new ItemStack(Material.valueOf(config.getString("material", "DIRT").toUpperCase()), 1);
 		ItemMeta meta = i.getItemMeta();
@@ -141,7 +143,7 @@ public class ItemCreator extends TLibAPI{
 		}
 		if(config.contains("enchants")) {
 			for(String s : config.getStringList("enchants")) {
-				meta.addEnchant(org.bukkit.Registry.ENCHANTMENT.get(NamespacedKey.minecraft(s.split("\\.")[0])), Integer.parseInt(s.split("\\.")[1]), true);
+				meta.addEnchant(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(s.split("\\.")[0])), Integer.parseInt(s.split("\\.")[1]), true);
 			}
 		}
 		if(config.contains("hide_enchants")) {

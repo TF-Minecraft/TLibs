@@ -13,6 +13,8 @@ import net.md_5.bungee.api.ChatColor;
 
 public class StringFormatter {
 	
+	// Keep the existing legacy text representation, formatting, and exact-string comparisons.
+	@SuppressWarnings("deprecation")
 	public static String formatHex(String s) {
 		if (s == null || s.isEmpty()) {
 			return "";
@@ -253,6 +255,8 @@ public class StringFormatter {
 		return cleaned.toString();
 	}
 
+	// Keep the existing legacy text representation, formatting, and exact-string comparisons.
+	@SuppressWarnings("deprecation")
 	public static String getName(ItemStack i) {
 		ItemMeta m = i.getItemMeta();
 		if(m == null) return "none";
