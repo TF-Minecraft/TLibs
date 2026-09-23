@@ -6,7 +6,7 @@ author: Drefvelin
 folia-supported: true
 
 loadbefore: [RPCharacters]
-softdepend: [MMOItems, MythicLib, ItemsAdder, MythicMobs, MMOCore, MCPets]
+softdepend: [MMOItems, MythicLib, ItemsAdder, MythicMobs, MMOCore]
 
 commands:
   tlibs:
