@@ -5,17 +5,17 @@ set -euo pipefail
 sha256sum --check .github/dependencies.sha256
 
 mvn -B --no-transfer-progress org.apache.maven.plugins:maven-install-plugin:3.1.4:install-file \
-    -Dfile="libs/BungeeCord.jar" -DgroupId="net.md-5" -DartifactId="bungeecord-chat" \
-    -Dversion="1.20-R0.1-tfmc-3bc6fa2477eb" -Dpackaging=jar -DgeneratePom=true "$@"
+    -Dfile="libs/BungeeCord-26.1-R0.1-SNAPSHOT-build2096.jar" -DgroupId="net.md-5" -DartifactId="bungeecord-chat" \
+    -Dversion="26.1-R0.1-SNAPSHOT-build2096-tfmc-822e034c64c8" -Dpackaging=jar -DgeneratePom=true "$@"
 mvn -B --no-transfer-progress org.apache.maven.plugins:maven-install-plugin:3.1.4:install-file \
-    -Dfile="libs/ItemsAdder_3.5.0-r2.jar" -DgroupId="local" -DartifactId="ItemsAdder" \
-    -Dversion="3.5.0-tfmc-0116d714822b" -Dpackaging=jar -DgeneratePom=true "$@"
+    -Dfile="libs/ItemsAdder-4.0.18.jar" -DgroupId="local" -DartifactId="ItemsAdder" \
+    -Dversion="4.0.18-tfmc-5a01b37bd744" -Dpackaging=jar -DgeneratePom=true "$@"
 mvn -B --no-transfer-progress org.apache.maven.plugins:maven-install-plugin:3.1.4:install-file \
-    -Dfile="libs/MMOItems-6.10.jar" -DgroupId="local" -DartifactId="MMOItems" \
-    -Dversion="6.10-tfmc-c84700df5942" -Dpackaging=jar -DgeneratePom=true "$@"
+    -Dfile="libs/MMOItems-6.10.1-SNAPSHOT.jar" -DgroupId="local" -DartifactId="MMOItems" \
+    -Dversion="6.10.1-SNAPSHOT-tfmc-a37f7789fcdc" -Dpackaging=jar -DgeneratePom=true "$@"
 mvn -B --no-transfer-progress org.apache.maven.plugins:maven-install-plugin:3.1.4:install-file \
-    -Dfile="libs/MythicLib-1.7.jar" -DgroupId="local" -DartifactId="MythicLib" \
-    -Dversion="1.7-tfmc-660ff2a6ec86" -Dpackaging=jar -DgeneratePom=true "$@"
+    -Dfile="libs/MythicLib-1.7.1-SNAPSHOT.jar" -DgroupId="local" -DartifactId="MythicLib" \
+    -Dversion="1.7.1-SNAPSHOT-tfmc-225aa7f75d4e" -Dpackaging=jar -DgeneratePom=true "$@"
 mvn -B --no-transfer-progress org.apache.maven.plugins:maven-install-plugin:3.1.4:install-file \
-    -Dfile="libs/item-nbt-api-plugin-2.15.0.jar" -DgroupId="local" -DartifactId="item-nbt-api-plugin" \
-    -Dversion="2.15.0-tfmc-a5f593d6214b" -Dpackaging=jar -DgeneratePom=true "$@"
+    -Dfile="libs/NBTAPI-2.16.1.jar" -DgroupId="local" -DartifactId="item-nbt-api-plugin" \
+    -Dversion="2.16.1-tfmc-c571502e7686" -Dpackaging=jar -DgeneratePom=true "$@"
