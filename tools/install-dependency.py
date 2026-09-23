@@ -147,10 +147,6 @@ def install(version, entry, args, group="me.plugins", artifact="tlibs"):
         jar = work / "tlibs.jar"
         if args.jar:
             shutil.copyfile(args.jar, jar)
-        elif args.assets:
-            if "asset_path" not in entry:
-                raise ValueError("This version is not in server-assets; use --jar or authenticated download")
-            shutil.copyfile(args.assets / entry["asset_path"], jar)
         else:
             download(entry, jar)
         verify(jar, entry["sha256"])
@@ -179,16 +175,14 @@ def main():
     parser.add_argument("--latest", action="store_true",
                         help="Resolve the latest stable release and update --pom after installation")
     parser.add_argument("--github-output", type=Path, help="Append resolved version and checksum action outputs")
-    source = parser.add_mutually_exclusive_group()
-    source.add_argument("--jar", type=Path, help="Use a local JAR; the checksum must still match")
-    source.add_argument("--assets", type=Path, help="Use a local server-assets checkout")
+    parser.add_argument("--jar", type=Path, help="Use a local JAR; the checksum must still match")
     parser.add_argument("--mvn", default="mvn", help="Maven executable")
     parser.add_argument("--maven-repo", type=Path, help="Override Maven's local repository")
     args = parser.parse_args()
     try:
         updated_pom = None
         if args.latest:
-            if not args.pom or args.jar or args.assets:
+            if not args.pom or args.jar:
                 raise ValueError("--latest requires --pom and downloads its release artifact")
             version, entry = latest_release()
             updated_pom = resolved_pom(args.pom, version)
@@ -202,8 +196,6 @@ def main():
         # Resolve sources before changing the subprocess working directory.
         if args.jar:
             args.jar = args.jar.resolve()
-        if args.assets:
-            args.assets = args.assets.resolve()
         install(version, entry, args)
         if updated_pom is not None:
             args.pom.write_text(updated_pom, encoding="utf-8")

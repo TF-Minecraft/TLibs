@@ -23,7 +23,7 @@ class PluginInstallerTests(unittest.TestCase):
         path.write_text(text)
         catalog = {f'tfmc:{name}': {'property': name + '.version', 'repository': 'TF-Minecraft/' + name,
                                   'filename': name + '-{version}.jar'} for name in ('a', 'b')}
-        args = argparse.Namespace(mvn='mvn', maven_repo=None, assets=None)
+        args = argparse.Namespace(mvn='mvn', maven_repo=None)
         return text, catalog, args
 
     def test_latest_resolves_only_direct_inputs_with_real_coordinates(self):

@@ -45,7 +45,7 @@ def prepare(pom, mode, args, catalog):
     resolved = []
     for key, pinned, definition in dependencies(pom, catalog):
         group, artifact = key.split(":")
-        options = argparse.Namespace(jar=None, assets=None, mvn=args.mvn, maven_repo=args.maven_repo)
+        options = argparse.Namespace(jar=None, mvn=args.mvn, maven_repo=args.maven_repo)
         private_input = "versions" in definition and (
             "repository" not in definition or (mode == "pinned" and pinned in definition["versions"]))
         if private_input:
@@ -53,7 +53,6 @@ def prepare(pom, mode, args, catalog):
             if pinned not in definition["versions"]:
                 raise ValueError(f"No verified private input for {key}:{pinned}")
             version, entry = pinned, definition["versions"][pinned]
-            options.assets = args.assets.resolve() if args.assets else None
         else:
             version, entry = installer.release_artifact(
                 definition["repository"], definition["filename"],
@@ -61,10 +60,10 @@ def prepare(pom, mode, args, catalog):
                 legacy_filename_patterns=definition.get("legacy_filenames", ()))
         previous_token = os.environ.get("GH_TOKEN")
         try:
-            if private_input and not options.assets:
+            if private_input:
                 private_token = os.environ.get("TFMC_PRIVATE_TOKEN")
                 if not private_token:
-                    raise ValueError(f"{key} requires TFMC_PRIVATE_TOKEN or --assets")
+                    raise ValueError(f"{key} requires TFMC_PRIVATE_TOKEN")
                 os.environ["GH_TOKEN"] = private_token
             installer.install(version, entry, options, group, artifact)
         finally:
@@ -89,7 +88,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pom", type=Path, default=Path("pom.xml"))
     parser.add_argument("--mode", choices=("pinned", "latest"), default="pinned")
-    parser.add_argument("--assets", type=Path, help="Local private ServerAssets checkout")
     parser.add_argument("--mvn", default="mvn")
     parser.add_argument("--maven-repo", type=Path)
     parser.add_argument("--lock", type=Path, help="Write resolved versions and checksums as build metadata")

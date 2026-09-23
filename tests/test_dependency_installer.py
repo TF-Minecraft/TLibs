@@ -135,7 +135,7 @@ class InstallerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             jar = Path(directory) / "input.jar"
             jar.write_bytes(b"wrong binary")
-            args = argparse.Namespace(jar=jar, assets=None, mvn="mvn", maven_repo=None)
+            args = argparse.Namespace(jar=jar, mvn="mvn", maven_repo=None)
             with patch.object(installer.subprocess, "run") as run:
                 with self.assertRaisesRegex(ValueError, "checksum mismatch"):
                     installer.install("1.0-test", {"sha256": "0" * 64}, args)
@@ -145,7 +145,7 @@ class InstallerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             jar = Path(directory) / "input.jar"
             jar.write_bytes(b"verified fixture")
-            args = argparse.Namespace(jar=jar, assets=None, mvn="mvn", maven_repo=Path(directory) / "cache")
+            args = argparse.Namespace(jar=jar, mvn="mvn", maven_repo=Path(directory) / "cache")
             def check(command, **kwargs):
                 work = Path(kwargs["cwd"])
                 self.assertNotEqual(jar.parent, work)
