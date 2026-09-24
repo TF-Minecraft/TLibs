@@ -1,10 +1,16 @@
 package net.tfminecraft.tlibs.objects.api.subapi;
 
+import net.tfminecraft.tlibs.armour.CosmeticHelmetFix;
+import net.tfminecraft.tlibs.armour.MmoItemTagPreserver;
+import net.tfminecraft.tlibs.armour.MmoItemTagPreserver.SavedTag;
 import net.tfminecraft.tlibs.util.LegacyModelData;
+
+import java.util.List;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
@@ -46,6 +52,11 @@ public final class ItemSkinPreserver {
 		}
 		result = resultNbt.toItem();
 
+		Material previousType = result.getType();
+		int previousDamage = currentDamage(result);
+		Integer previousMaxDamage = currentMaxDamage(result);
+		List<SavedTag> tags = MmoItemTagPreserver.snapshot(result);
+
 		Material skinMaterial = oldItem.getType();
 		result.setType(skinMaterial);
 
@@ -67,6 +78,8 @@ public final class ItemSkinPreserver {
 				result.setItemMeta(resultMeta);
 			}
 		}
+
+		CosmeticHelmetFix.afterAppearanceChange(result, previousType, previousDamage, previousMaxDamage, tags);
 
 		String[] iaParts = parseIaTag(oldNbt);
 		if (iaParts != null) {
@@ -110,9 +123,14 @@ public final class ItemSkinPreserver {
 	// This path mutates the existing ItemStack; replacing it would change aliases held by callers.
 	@SuppressWarnings("deprecation")
 	public static void applyAppearance(ItemStack item, Material type, Integer customModelData, Color leatherColor) {
+		Material previousType = item.getType();
+		int previousDamage = currentDamage(item);
+		Integer previousMaxDamage = currentMaxDamage(item);
+		List<SavedTag> tags = MmoItemTagPreserver.snapshot(item);
 		item.setType(type);
 		ItemMeta meta = item.getItemMeta();
 		if (meta == null) {
+			MmoItemTagPreserver.restoreMissing(item, tags);
 			return;
 		}
 		if (customModelData != null) {
@@ -124,6 +142,23 @@ public final class ItemSkinPreserver {
 		} else {
 			item.setItemMeta(meta);
 		}
+		CosmeticHelmetFix.afterAppearanceChange(item, previousType, previousDamage, previousMaxDamage, tags);
+	}
+
+	private static int currentDamage(ItemStack item) {
+		ItemMeta meta = item.getItemMeta();
+		if (meta instanceof Damageable damageable) {
+			return damageable.getDamage();
+		}
+		return 0;
+	}
+
+	private static Integer currentMaxDamage(ItemStack item) {
+		ItemMeta meta = item.getItemMeta();
+		if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
+			return damageable.getMaxDamage();
+		}
+		return null;
 	}
 
 	private static boolean hasItemsAdderCompound(ItemStack item) {

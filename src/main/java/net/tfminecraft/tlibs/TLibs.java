@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.tfminecraft.tlibs.armour.ArmorEquipEvent;
+import net.tfminecraft.tlibs.armour.CosmeticHelmetListener;
 import net.tfminecraft.tlibs.command.TLibsCommand;
 import net.tfminecraft.tlibs.config.RebuildConfig;
 import net.tfminecraft.tlibs.config.SocketTierConfig;
@@ -35,6 +36,8 @@ public class TLibs extends JavaPlugin {
 		initializeAPIs();
 		GemApplyPrimer.init(this);
 		ArmorEquipEvent.registerListener(this);
+		Bukkit.getPluginManager().registerEvents(new CosmeticHelmetListener(), this);
+		CosmeticHelmetListener.repairOnlinePlayers();
 		Bukkit.getPluginManager().registerEvents(new FurnitureRepairListener(), this);
 		registerRebuildBridge();
 		RebuildDebug.logAlways("startup complete bridgeRegistered=" + rebuildRegistrar.isRegistered());
