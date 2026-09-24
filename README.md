@@ -18,21 +18,6 @@ Players encounter its effects through the plugins that depend on it: custom equi
 
 TLibs supports the gameplay plugins that provide the player-facing experiences, keeping common behavior in one place.
 
-## Inventory scan API
-
-From TLibs 2.1.0, `net.tfminecraft.tlibs.itemscan.ItemScanService` owns the shared
-scanner on Paper. Its synchronous player traversal does not support Folia.
-TLibs starts it on enable and stops it on disable. Plugins with a hard
-TLibs dependency subscribe an `ItemScanHandler` during enable and unsubscribe
-during disable; only TLibs should call `start` or `stop`.
-
-The scanner processes one online player every two ticks, scans inventory-open
-events immediately, and calls pickup handlers with a null inventory and slot -1.
-Handlers run synchronously in registration order and retain ownership of item
-mutation. Existing Core consumers can coexist during migration: update each
-consumer to subscribe to one provider only. Deploy TLibs 2.1.0 before migrated
-consumers; rolling a consumer back restores its Core scanner subscription.
-
 ## Documentation
 
 [Project documentation](https://github.com/TF-Minecraft/Docs/blob/main/projects/TLibs/README.md)
