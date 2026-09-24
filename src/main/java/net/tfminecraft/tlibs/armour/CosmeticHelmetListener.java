@@ -5,51 +5,28 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import net.tfminecraft.tlibs.armour.MmoItemTagPreserver.SavedTag;
 
 /**
- * Skinned helmets stay placeable carved pumpkins until this corrects them.
- * MMOItems also spends their custom durability on hits that never reach a
- * normal helmet; that extra loss is put back so only vanilla armor damage remains.
+ * Helmet skins applied from now on carry a real max-damage value. MMOItems
+ * still spends their custom durability on hits that never reach a normal
+ * helmet; that extra loss is put back so only vanilla armor damage remains.
+ * Helmets skinned before this change are left alone.
  */
 public final class CosmeticHelmetListener implements Listener {
 	private final Map<UUID, SavedPiece[]> pendingArmor = new ConcurrentHashMap<>();
 
 	private record SavedPiece(ItemStack item) {
-	}
-
-	public static void repairOnlinePlayers() {
-		for (Player player : Bukkit.getOnlinePlayers()) {
-			repairAll(player);
-		}
-	}
-
-	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-	public void onJoin(PlayerJoinEvent event) {
-		repairAll(event.getPlayer());
-	}
-
-	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-	public void onClick(InventoryClickEvent event) {
-		if (event.getCurrentItem() != null) {
-			CosmeticHelmetFix.repairIfNeeded(event.getCurrentItem());
-		}
-		if (event.getCursor() != null) {
-			CosmeticHelmetFix.repairIfNeeded(event.getCursor());
-		}
 	}
 
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -72,7 +49,6 @@ public final class CosmeticHelmetListener implements Listener {
 			if (piece == null || piece.getType().isAir()) {
 				continue;
 			}
-			CosmeticHelmetFix.repairIfNeeded(piece);
 			if (!CosmeticHelmetFix.shouldRevertUndamageableDrain(piece)) {
 				continue;
 			}
@@ -123,15 +99,6 @@ public final class CosmeticHelmetListener implements Listener {
 		Player player = event.getPlayer();
 		for (ItemStack piece : player.getInventory().getArmorContents()) {
 			CosmeticHelmetFix.syncVanillaDamage(piece);
-		}
-	}
-
-	private static void repairAll(Player player) {
-		for (ItemStack piece : player.getInventory().getArmorContents()) {
-			CosmeticHelmetFix.repairIfNeeded(piece);
-		}
-		for (ItemStack piece : player.getInventory().getContents()) {
-			CosmeticHelmetFix.repairIfNeeded(piece);
 		}
 	}
 }

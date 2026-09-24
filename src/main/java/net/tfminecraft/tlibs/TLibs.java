@@ -37,7 +37,6 @@ public class TLibs extends JavaPlugin {
 		GemApplyPrimer.init(this);
 		ArmorEquipEvent.registerListener(this);
 		Bukkit.getPluginManager().registerEvents(new CosmeticHelmetListener(), this);
-		CosmeticHelmetListener.repairOnlinePlayers();
 		Bukkit.getPluginManager().registerEvents(new FurnitureRepairListener(), this);
 		registerRebuildBridge();
 		RebuildDebug.logAlways("startup complete bridgeRegistered=" + rebuildRegistrar.isRegistered());
