@@ -46,15 +46,14 @@ Preserve this file with build artifacts and release metadata.
 
 To select newer dependency versions locally, run the installer with
 `--mode latest`, then review and commit the resulting POM changes. CI continues
-to use the committed versions. Active providers, including Cooking and
-InteractibleFurniture, use stable production releases.
+to use the committed versions. Providers use stable production releases.
 
 `--maven-repo /path/to/cache` selects an isolated Maven cache. Pass the same path
 to builds with `-Dmaven.repo.local=/path/to/cache`.
 
 ## TLibs source builds
 
-TLibs 2.0.0 uses Maven coordinates `me.plugins:tlibs:2.0.0` and Java API package
+TLibs uses Maven coordinates `me.plugins:tlibs` and Java API package
 `net.tfminecraft.tlibs`. Prepare its declared providers, then build and install:
 
 ```sh
@@ -62,11 +61,11 @@ python3 tools/install-plugins.py --pom pom.xml --mode pinned
 mvn clean install
 ```
 
-The runtime artifact is `target/tlibs-2.0.0.jar`. Its plugin descriptor receives
+The runtime artifact is `target/tlibs-<version>.jar`. Its plugin descriptor receives
 the Maven version. Build and deploy consumers with matching provider versions.
 These commands build artifacts; they do not modify a running Minecraft server.
 
 Release JAR names use a lowercase alphanumeric plugin name followed by the version.
 The catalog prefers the canonical filename and accepts only explicitly listed legacy
-filenames during migration. Maven coordinates and Bukkit plugin identifiers remain
+filenames, for releases published before a rename. Maven coordinates and Bukkit plugin identifiers remain
 stable; a filename change does not rename a server data directory.
