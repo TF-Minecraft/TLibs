@@ -3,6 +3,7 @@ package net.tfminecraft.tlibs.objects.api.subapi;
 import net.tfminecraft.tlibs.util.LegacyModelData;
 
 
+import java.util.List;
 import java.util.Optional;
 
 import org.bukkit.Color;
@@ -14,6 +15,8 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import net.tfminecraft.tlibs.TLibs;
+import net.tfminecraft.tlibs.armour.MmoItemTagPreserver;
+import net.tfminecraft.tlibs.armour.MmoItemTagPreserver.SavedTag;
 import net.tfminecraft.tlibs.objects.TLibAPI;
 import net.tfminecraft.tlibs.objects.api.ItemAPI;
 import net.tfminecraft.gunsandgadgets.GunsAndGadgets;
@@ -84,6 +87,7 @@ public class ArmorMerger extends TLibAPI{
 			leatherColor = ls.getColor();
 		}
 		Integer cmd = LegacyModelData.has(skinMeta) ? LegacyModelData.get(skinMeta) : null;
+		List<SavedTag> tags = MmoItemTagPreserver.snapshot(item);
 		ItemSkinPreserver.applyAppearance(item, skin.getType(), cmd, leatherColor);
 		if(name.isPresent()) {
 			ItemMeta m = item.getItemMeta();
@@ -92,6 +96,7 @@ public class ArmorMerger extends TLibAPI{
 				item.setItemMeta(m);
 			}
 		}
+		MmoItemTagPreserver.restoreMissing(item, tags);
 		if(s.split("\\.")[0].equalsIgnoreCase("ia")) {
 			String namespace = s.split("\\.")[1].split("\\:")[0];
 			String id = s.split("\\.")[1].split("\\:")[1];
