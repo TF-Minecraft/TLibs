@@ -13,6 +13,7 @@ Players encounter its effects through the plugins that depend on it: custom equi
 - **Equipment appearance preservation** — carries supported skin and appearance information through item rebuilding.
 - **Tiered socket handling** — shared rules for socket categories and the gems or runes applied to them.
 - **Equipment events** — exposes armour equip changes so other plugins can respond consistently.
+- **Inventory scanning** — shared periodic and event-driven scans; gameplay plugins register handlers for their own item updates.
 - **Shared persistence and utilities** — provides database support and common text, time, and location helpers for dependent plugins.
 
 TLibs supports the gameplay plugins that provide the player-facing experiences, keeping common behavior in one place.
