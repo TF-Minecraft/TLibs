@@ -3,7 +3,6 @@ api-version: '1.21.10'
 name: TLibs
 version: ${project.version}
 author: Drefvelin
-folia-supported: true
 
 loadbefore: [RPCharacters]
 softdepend: [MMOItems, MythicLib, ItemsAdder, MythicMobs, MMOCore]

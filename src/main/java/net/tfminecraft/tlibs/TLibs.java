@@ -8,6 +8,7 @@ import net.tfminecraft.tlibs.command.TLibsCommand;
 import net.tfminecraft.tlibs.config.RebuildConfig;
 import net.tfminecraft.tlibs.config.SocketTierConfig;
 import net.tfminecraft.tlibs.enums.APIType;
+import net.tfminecraft.tlibs.itemscan.ItemScanService;
 import net.tfminecraft.tlibs.listener.FurnitureRepairListener;
 import net.tfminecraft.tlibs.mmoitem.GemApplyPrimer;
 import net.tfminecraft.tlibs.mmoitem.MMOItemRebuildRegistrar;
@@ -33,6 +34,7 @@ public class TLibs extends JavaPlugin {
 		saveDefaultConfig();
 		reloadPluginConfig();
 		initializeAPIs();
+		ItemScanService.start(this);
 		GemApplyPrimer.init(this);
 		ArmorEquipEvent.registerListener(this);
 		Bukkit.getPluginManager().registerEvents(new FurnitureRepairListener(), this);
@@ -46,6 +48,13 @@ public class TLibs extends JavaPlugin {
 		}
 
 		Bukkit.getLogger().info("[TLibs] Complete!");
+	}
+
+	@Override
+	public void onDisable() {
+		if (ItemScanService.get() != null) {
+			ItemScanService.get().stop();
+		}
 	}
 
 	private void registerRebuildBridge() {

@@ -98,6 +98,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.20.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>2.0.17</version>
@@ -208,9 +214,11 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
+                    <systemPropertyVariables>
+                        <!-- The provided BungeeCord bundle contains a proxy-specific SLF4J provider. -->
+                        <slf4j.provider>org.slf4j.simple.SimpleServiceProvider</slf4j.provider>
+                    </systemPropertyVariables>
                     <classpathDependencyExcludes>
-                        <classpathDependencyExclude>io.papermc.paper:paper-api</classpathDependencyExclude>
-                        <classpathDependencyExclude>net.md-5:bungeecord-chat</classpathDependencyExclude>
                         <classpathDependencyExclude>local:ItemsAdder</classpathDependencyExclude>
                         <classpathDependencyExclude>local:MMOItems</classpathDependencyExclude>
                         <classpathDependencyExclude>local:MythicLib</classpathDependencyExclude>
