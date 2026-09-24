@@ -65,6 +65,11 @@
     "repository": "TF-Minecraft/TFMCCore",
     "filename": "tfmccore-{version}.jar"
   },
+  "me.plugins:geminfusion": {
+    "property": "geminfusion.version",
+    "repository": "TF-Minecraft/GemInfusion",
+    "filename": "geminfusion-{version}.jar"
+  },
   "me.plugins:tlibs": {
     "property": "tlibs.version",
     "repository": "TF-Minecraft/TLibs",
