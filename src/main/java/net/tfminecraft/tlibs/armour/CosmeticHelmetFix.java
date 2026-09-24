@@ -30,23 +30,6 @@ public final class CosmeticHelmetFix {
 		applyProfile(item, componentMax, materialMax, previousDamage, tags);
 	}
 
-	public static boolean repairIfNeeded(ItemStack item) {
-		if (!shouldMaintain(item)) {
-			return false;
-		}
-		List<SavedTag> tags = MmoItemTagPreserver.snapshot(item);
-		int componentMax = 0;
-		int currentDamage = 0;
-		ItemMeta meta = item.getItemMeta();
-		if (meta instanceof Damageable damageable) {
-			currentDamage = damageable.getDamage();
-			if (damageable.hasMaxDamage()) {
-				componentMax = damageable.getMaxDamage();
-			}
-		}
-		return applyProfile(item, componentMax, 0, currentDamage, tags);
-	}
-
 	public static boolean shouldRevertUndamageableDrain(ItemStack item) {
 		if (!shouldMaintain(item)) {
 			return false;
@@ -60,7 +43,11 @@ public final class CosmeticHelmetFix {
 	}
 
 	public static boolean isProtectedHelmet(ItemStack item) {
-		return shouldMaintain(item);
+		if (!shouldMaintain(item)) {
+			return false;
+		}
+		ItemMeta meta = item.getItemMeta();
+		return meta instanceof Damageable damageable && damageable.hasMaxDamage() && damageable.getMaxDamage() > 0;
 	}
 
 	public static void syncVanillaDamage(ItemStack item) {
