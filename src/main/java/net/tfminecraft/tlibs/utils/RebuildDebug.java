@@ -20,19 +20,12 @@ public final class RebuildDebug {
 		if (!enabled()) {
 			return;
 		}
-		String line = "[TLibs][MMORebuild] " + message;
-		System.out.println(line);
-		Logger logger = TLibs.getInstance() != null ? TLibs.getInstance().getLogger() : null;
-		if (logger != null) {
-			logger.info(line);
-		}
+		logAlways(message);
 	}
 
 	public static void logAlways(String message) {
-		String line = "[TLibs][MMORebuild] " + message;
-		System.out.println(line);
-		if (TLibs.getInstance() != null) {
-			TLibs.getInstance().getLogger().info(line);
-		}
+		TLibs plugin = TLibs.getInstance();
+		Logger logger = plugin != null ? plugin.getLogger() : Logger.getLogger(TLibs.class.getName());
+		logger.info("[MMORebuild] " + message);
 	}
 }
