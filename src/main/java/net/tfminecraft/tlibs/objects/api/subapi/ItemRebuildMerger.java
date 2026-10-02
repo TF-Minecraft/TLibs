@@ -81,9 +81,6 @@ public final class ItemRebuildMerger {
 
 	private static void copyCompoundTag(ItemStack oldItem, ItemStack result, String tag) {
 		String serialized = readCompoundSnbt(oldItem, tag);
-		if (serialized == null) {
-			return;
-		}
 		NBT.modify(result, (ReadWriteItemNBT newNbt) -> {
 			ReadWriteNBT target = newNbt.getOrCreateCompound(tag);
 			target.mergeCompound(NBT.parseNBT(serialized));

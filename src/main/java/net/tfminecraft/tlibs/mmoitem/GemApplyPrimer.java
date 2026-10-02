@@ -29,9 +29,10 @@ public final class GemApplyPrimer {
 
 	public static void put(UUID playerId, Inventory inventory, int slot, ItemStack oldItemSnapshot, String targetType,
 			String targetId, RebuildReason reason, long expireTicks) {
-		primers.put(playerId, new Entry(inventory, slot, oldItemSnapshot, targetType, targetId, reason));
+		Entry entry = new Entry(inventory, slot, oldItemSnapshot, targetType, targetId, reason);
+		primers.put(playerId, entry);
 		if (plugin != null) {
-			Bukkit.getScheduler().runTaskLater(plugin, () -> primers.remove(playerId), expireTicks);
+			Bukkit.getScheduler().runTaskLater(plugin, () -> primers.remove(playerId, entry), expireTicks);
 		}
 	}
 

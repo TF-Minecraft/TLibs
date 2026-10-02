@@ -37,12 +37,8 @@ public class StringFormatter {
 				out.append(bit);
 				continue;
 			}
-			try {
-				out.append(ChatColor.of(code));
-				i += 6;
-			} catch (Exception e) {
-				out.append(bit);
-			}
+			out.append(ChatColor.of(code));
+			i += 6;
 		}
 		return out.toString();
 	}
@@ -125,7 +121,7 @@ public class StringFormatter {
 		if (!trimmed.matches("^#[0-9a-fA-F]{6}$")) {
 			return null;
 		}
-		return trimmed.toLowerCase();
+		return trimmed.toLowerCase(java.util.Locale.ROOT);
 	}
 
 	/** Maps legacy colour code char to {@code #RRGGBB}, or null if unknown. */
@@ -173,7 +169,7 @@ public class StringFormatter {
 			if (style == null) {
 				continue;
 			}
-			switch (style.trim().toLowerCase()) {
+			switch (style.trim().toLowerCase(java.util.Locale.ROOT)) {
 				case "bold":
 					prefix.append(ChatColor.BOLD);
 					break;
@@ -265,9 +261,9 @@ public class StringFormatter {
 	}
 
 	public static String getVanillaName(Material material) {
-		String[] words = material.name().toLowerCase().split("_");
+		String[] words = material.name().toLowerCase(java.util.Locale.ROOT).split("_");
 		return Arrays.stream(words)
-					.map(word -> word.substring(0, 1).toUpperCase() + word.substring(1))
+					.map(word -> word.substring(0, 1).toUpperCase(java.util.Locale.ROOT) + word.substring(1))
 					.collect(Collectors.joining(" "));
 	}
 

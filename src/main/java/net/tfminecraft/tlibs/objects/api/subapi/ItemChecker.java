@@ -27,11 +27,11 @@ public class ItemChecker extends TLibAPI{
 	// Keep the existing legacy text representation, formatting, and exact-string comparisons.
 	@SuppressWarnings("deprecation")
 	public String getAsStringPath(ItemStack i) {
-		String path = "v."+i.getType().toString().toLowerCase();
+		String path = "v."+i.getType().toString().toLowerCase(java.util.Locale.ROOT);
 		if(this.getPluginChecker().checkPlugin("MMOItems") && this.getPluginChecker().checkPlugin("MythicLib")) {
 			NBTItem nbt = NBTItem.get(i);
 			if(nbt.hasType()) {
-				path = "m."+nbt.getType().toLowerCase()+"."+nbt.getString("MMOITEMS_ITEM_ID").toLowerCase();
+				path = "m."+nbt.getType().toLowerCase(java.util.Locale.ROOT)+"."+nbt.getString("MMOITEMS_ITEM_ID").toLowerCase(java.util.Locale.ROOT);
 			}
 		}
 		if(this.getPluginChecker().checkPlugin("ItemsAdder")) {
@@ -55,7 +55,7 @@ public class ItemChecker extends TLibAPI{
 
 			if (hasName || hasModel) {
 				StringBuilder sb = new StringBuilder("modeled.(");
-				sb.append("type=").append(i.getType().toString().toLowerCase());
+				sb.append("type=").append(i.getType().toString().toLowerCase(java.util.Locale.ROOT));
 				if (hasName) {
 					sb.append(";name=").append(meta.getDisplayName());
 				}
@@ -75,7 +75,8 @@ public class ItemChecker extends TLibAPI{
 		if (item == null || item.getType().isAir() || s == null || s.isBlank()) {
 			return false;
 		}
-		String type = s.split("\\.")[0]; //v.emerald
+		int dot = s.indexOf('.');
+		String type = dot < 0 ? s : s.substring(0, dot);
 		ItemPathHandler handler = itemApi != null ? itemApi.getPathHandler(type) : null;
 		if (handler != null) {
 			return handler.matches(item, s);
@@ -93,7 +94,7 @@ public class ItemChecker extends TLibAPI{
 				return false;
 			}
 			try {
-				return item.getType().equals(Material.valueOf(parts[1].toUpperCase()));
+				return item.getType().equals(Material.valueOf(parts[1].toUpperCase(java.util.Locale.ROOT)));
 			} catch (IllegalArgumentException e) {
 				return false;
 			}
@@ -118,7 +119,8 @@ public class ItemChecker extends TLibAPI{
 				Bukkit.getLogger().info("[TLibs] ERROR! This operation requires ItemsAdder and LoneLibs!");
 				return false;
 			}
-			String itemPath = s.split("\\.")[1]; //ia.tfmc:abyssalite
+			if (dot < 0 || dot == s.length() - 1) return false;
+			String itemPath = s.substring(dot + 1); //ia.tfmc:abyssalite
 			CustomStack stack = CustomStack.byItemStack(item);
 			if(stack != null) {
 				if(itemPath.equalsIgnoreCase(stack.getNamespacedID())) return true;
@@ -126,14 +128,17 @@ public class ItemChecker extends TLibAPI{
 		} else if (type.equalsIgnoreCase("modeled")) {
 			if (!item.hasItemMeta()) return false;
 
-			String raw = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')')); // type=emerald;name=§eYellowshard;model=3
+			int open = s.indexOf('(');
+			int close = s.lastIndexOf(')');
+			if (open < 0 || close <= open) return false;
+			String raw = s.substring(open + 1, close); // type=emerald;name=§eYellowshard;model=3
 			String[] parts = raw.split(";");
 			Map<String, String> attributes = new HashMap<>();
 
 			for (String part : parts) {
 				String[] keyValue = part.split("=", 2);
 				if (keyValue.length == 2) {
-					attributes.put(keyValue[0].toLowerCase(), keyValue[1]);
+					attributes.put(keyValue[0].toLowerCase(java.util.Locale.ROOT), keyValue[1]);
 				}
 			}
 
@@ -141,7 +146,7 @@ public class ItemChecker extends TLibAPI{
 			if (attributes.containsKey("type")) {
 				Material material;
 				try {
-					material = Material.valueOf(attributes.get("type").toUpperCase());
+					material = Material.valueOf(attributes.get("type").toUpperCase(java.util.Locale.ROOT));
 				} catch (IllegalArgumentException e) {
 					return false;
 				}
@@ -175,39 +180,27 @@ public class ItemChecker extends TLibAPI{
 			FoodItem fi = FoodItem.fromItem(item);
 			if (fi == null) return false;
 
-			// Remove the leading "c."
-			String raw = s.substring(2);
-
-			String category;
+			if (dot < 0) return false;
+			String raw = s.substring(dot + 1);
+			String category = raw;
 			String typeFilter = null;
-
-			// Check if parentheses exist
+			String originFilter = null;
 			if (raw.contains("(") && raw.endsWith(")")) {
-
-				// category before "("
-				category = raw.substring(0, raw.indexOf("("));
-
-				// inside the parentheses: "type=something"
-				String inside = raw.substring(raw.indexOf("(") + 1, raw.length() - 1);
-
-				// expected: type=<value>
-				if (inside.startsWith("type=")) {
-					typeFilter = inside.substring(5);
+				int open = raw.indexOf('(');
+				category = raw.substring(0, open);
+				String inside = raw.substring(open + 1, raw.length() - 1);
+				for (String attribute : inside.split(";")) {
+					String[] pair = attribute.split("=", 2);
+					if (pair.length != 2) continue;
+					if (pair[0].equalsIgnoreCase("type")) typeFilter = pair[1];
+					if (pair[0].equalsIgnoreCase("origin")) originFilter = pair[1];
 				}
-
-			} else {
-				// Simple c.category
-				category = raw;
 			}
-
-			// First check category
-			if (!fi.getCategory().equalsIgnoreCase(category)) return false;
-
-			// If no type filter, category match is enough
-			if (typeFilter == null) return true;
-
-			// Type must also match
-			return fi.getId().equalsIgnoreCase(typeFilter);
+			String actualCategory = fi.getCategory() == null ? "" : fi.getCategory();
+			if (!actualCategory.equalsIgnoreCase(category)) return false;
+			if (typeFilter != null && !typeFilter.equalsIgnoreCase(fi.getId())) return false;
+			String actualOrigin = fi.getOrigin() == null ? "" : fi.getOrigin();
+			return originFilter == null || originFilter.equalsIgnoreCase(actualOrigin);
 		}
 
 		return false;

@@ -29,9 +29,6 @@ public final class ItemNbtDebug {
 			return "pdc=<none>";
 		}
 		ItemMeta meta = item.getItemMeta();
-		if (meta == null) {
-			return "pdc=<none>";
-		}
 		PersistentDataContainer pdc = meta.getPersistentDataContainer();
 		if (pdc.getKeys().isEmpty()) {
 			return "pdc=<empty>";

@@ -82,6 +82,9 @@ public final class CosmeticHelmetListener implements Listener {
 				replaced = true;
 				continue;
 			}
+			if (live.getType() != piece.item().getType()) {
+				continue;
+			}
 			List<SavedTag> tags = MmoItemTagPreserver.snapshot(piece.item());
 			ItemMeta savedMeta = piece.item().getItemMeta();
 			if (savedMeta != null) {

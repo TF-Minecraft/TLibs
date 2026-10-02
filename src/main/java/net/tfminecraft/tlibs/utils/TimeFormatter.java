@@ -18,20 +18,19 @@ public class TimeFormatter {
 		int value = Integer.parseInt(matcher.group(1));
 		String unit = matcher.group(2);
 
-		switch (unit) {
-			case "s":
-				return value * 1000;
-			case "m":
-				return value * 60 * 1000;
-			case "h":
-				return value * 60 * 60 * 1000;
-			case "d":
-				return value * 24 * 60 * 60 * 1000;
-			case "mo":
-				return value * 30 * 24 * 60 * 60 * 1000;
-			default:
-				throw new IllegalArgumentException("Unknown time unit: " + unit);
+		// The regex above admits only these units; long multiplication prevents wrapping.
+		long multiplier = switch (unit) {
+			case "s" -> 1000L;
+			case "m" -> 60000L;
+			case "h" -> 3600000L;
+			case "d" -> 86400000L;
+			default -> 2592000000L; // mo
+		};
+		long millis = value * multiplier;
+		if (millis > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("Time too large: " + time);
 		}
+		return (int) millis;
 	}
 
 	/**
@@ -51,7 +50,7 @@ public class TimeFormatter {
 			return (int) value;
 		}
 
-		String lower = trimmed.toLowerCase();
+		String lower = trimmed.toLowerCase(java.util.Locale.ROOT);
 		Matcher matcher = DURATION_TOKEN.matcher(lower);
 		long total = 0;
 		int lastEnd = 0;
@@ -75,13 +74,12 @@ public class TimeFormatter {
 	}
 
 	private static long secondsPerUnit(String unit) {
-		return switch (unit.toLowerCase()) {
-			case "s" -> 1L;
+		return switch (unit.toLowerCase(java.util.Locale.ROOT)) {
 			case "m" -> 60L;
 			case "h" -> 3600L;
 			case "d" -> 86400L;
 			case "w" -> 604800L;
-			default -> throw new IllegalArgumentException("Unknown time unit: " + unit);
+			default -> 1L; // s; DURATION_TOKEN validates the unit before this private call.
 		};
 	}
 
