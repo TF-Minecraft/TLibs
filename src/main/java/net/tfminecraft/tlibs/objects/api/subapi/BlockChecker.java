@@ -63,7 +63,7 @@ public class BlockChecker extends TLibAPI {
 			return false;
 		}
 		try {
-			Material material = Material.valueOf(materialName.trim().toUpperCase());
+			Material material = Material.valueOf(materialName.trim().toUpperCase(java.util.Locale.ROOT));
 			return b.getType() == material;
 		} catch (IllegalArgumentException ex) {
 			return false;

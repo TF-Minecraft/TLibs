@@ -230,7 +230,7 @@ class ArmorListener implements Listener{
 				ItemStack i = event.getBrokenItem().clone();
 				i.setAmount(1);
 				if (i.getItemMeta() instanceof org.bukkit.inventory.meta.Damageable damageable) {
-					damageable.setDamage((short) ((short) damageable.getDamage() - 1));
+					damageable.setDamage(Math.max(0, damageable.getDamage() - 1));
 					i.setItemMeta(damageable);
 				}
 				if(type.equals(ArmorType.HELMET)){

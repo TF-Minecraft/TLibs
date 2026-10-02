@@ -81,6 +81,7 @@ public class TieredSocketApplyListener implements Listener {
 			spoofedNbt.addTag(new ItemTag(ItemStats.GEM_COLOR.getNBTPath(), targetSocket));
 		}
 
+        ItemStack originalGem = cursor.clone();
 		GemStone spoofedStone = new GemStone(playerData, spoofedNbt);
 		GemStone.ApplyResult result = spoofedStone.applyOntoItem(hostNbt, Type.get(hostNbt.getType()));
 		if (result.getType() == GemStone.ResultType.NONE) {
@@ -96,7 +97,7 @@ public class TieredSocketApplyListener implements Listener {
 			return;
 		}
 
-		PendingTieredSocketApply.stash(player, cursor, targetSocket, spoofed);
+		PendingTieredSocketApply.stash(player, originalGem, targetSocket, spoofed);
 		event.setCurrentItem(result.getResult());
 		MMOItemRebuildBridge.confirmAndScheduleGemApply(player, hostNbt.getType(),
 				hostNbt.getString("MMOITEMS_ITEM_ID"));

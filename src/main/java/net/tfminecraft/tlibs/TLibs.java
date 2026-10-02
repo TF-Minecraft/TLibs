@@ -81,12 +81,10 @@ public class TLibs extends JavaPlugin {
 
 	@Deprecated
 	public static TLibAPI getApiInstance(APIType t) {
-		if (t.equals(APIType.ITEM_API)) {
-			return iApi;
-		} else if (t.equals(APIType.BLOCK_API)) {
-			return bApi;
-		}
-		return null;
+        return switch (t) {
+            case ITEM_API -> iApi;
+            case BLOCK_API -> bApi;
+        };
 	}
 
 	public static TLibs getInstance() {

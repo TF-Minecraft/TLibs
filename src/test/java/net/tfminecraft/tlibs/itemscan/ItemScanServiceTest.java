@@ -200,6 +200,24 @@ class ItemScanServiceTest {
         verify(handler, never()).update(any(), any(), anyInt(), any());
     }
 
+    @Test
+    void emptyServerResetsRotationAndNonPlayerEventsAreIgnored() {
+        ItemScanHandler handler = matchingHandler();
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of());
+        pulse.run(); verifyNoInteractions(handler);
+        InventoryView view = mock(InventoryView.class);
+        when(view.getPlayer()).thenReturn(mock(org.bukkit.entity.HumanEntity.class));
+        service.onInventoryOpen(new InventoryOpenEvent(view));
+        service.onPickup(new EntityPickupItemEvent(mock(org.bukkit.entity.LivingEntity.class), mock(Item.class), 0));
+        verifyNoInteractions(handler);
+        Player player = playerWithPersonalView(InventoryType.CHEST);
+        Inventory top = player.getOpenInventory().getTopInventory();
+        ItemStack stack = item(Material.STONE);
+        when(top.getSize()).thenReturn(1); when(top.getItem(0)).thenReturn(stack);
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(player));
+        pulse.run(); verify(handler).update(player, top, 0, stack);
+    }
+
     private ItemScanHandler matchingHandler() {
         ItemScanHandler handler = mock(ItemScanHandler.class);
         when(handler.matches(any())).thenReturn(true);

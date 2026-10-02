@@ -34,8 +34,8 @@ public final class SocketOverrideStore {
 		ItemMeta meta = item.getItemMeta();
 		Map<String, String> map = parseJson(meta.getPersistentDataContainer().get(key(), PersistentDataType.STRING));
 		Map<String, String> legacy = parseJson(meta.getPersistentDataContainer().get(LEGACY_KEY, PersistentDataType.STRING));
-		map.putAll(legacy);
-		return map;
+		legacy.putAll(map);
+		return legacy;
 	}
 
 	public static void write(ItemStack item, Map<String, String> overrides) {
@@ -46,6 +46,8 @@ public final class SocketOverrideStore {
 		if (meta == null) {
 			return;
 		}
+		// Every write completes migration, including removal of the final override.
+		meta.getPersistentDataContainer().remove(LEGACY_KEY);
 		if (overrides == null || overrides.isEmpty()) {
 			meta.getPersistentDataContainer().remove(key());
 		} else {

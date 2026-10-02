@@ -49,9 +49,14 @@ public class ItemCreator extends TLibAPI{
 			Bukkit.getLogger().info("[TLibs] No handler for path prefix magic");
 			return null;
 		}
+		if (dot <= 0 || dot == s.length() - 1) return null;
 		ItemStack item = new ItemStack(Material.DIRT, 1);
 		if(type.equalsIgnoreCase("v")) {
-			item.setType(Material.valueOf(s.split("\\.")[1].toUpperCase()));
+			try {
+				item.setType(Material.valueOf(s.split("\\.", -1)[1].toUpperCase(java.util.Locale.ROOT)));
+			} catch (IllegalArgumentException e) {
+				return null;
+			}
 		} else if(type.equalsIgnoreCase("m")) {
 			if(!(this.getPluginChecker().checkPlugin("MMOItems") && this.getPluginChecker().checkPlugin("MythicLib"))) {
 				Bukkit.getLogger().info("[TLibs] ERROR! This operation requires MMOItems and MythicLib!");
@@ -63,20 +68,23 @@ public class ItemCreator extends TLibAPI{
 				return null;
 			}
 			ItemManager itemManager = MMOItems.plugin.getItems();
-			if(itemManager.getMMOItem(MMOItems.plugin.getTypes().get(parts[1].toUpperCase()), parts[2].toUpperCase()) == null){
+			if(itemManager.getMMOItem(MMOItems.plugin.getTypes().get(parts[1].toUpperCase(java.util.Locale.ROOT)), parts[2].toUpperCase(java.util.Locale.ROOT)) == null){
 				Bukkit.getLogger().info(s + " ia a malformed item input");
 				return null;
 			}
-			item =  itemManager.getMMOItem(MMOItems.plugin.getTypes().get(parts[1].toUpperCase()), parts[2].toUpperCase()).newBuilder().build(); //m.material.salt
+			item =  itemManager.getMMOItem(MMOItems.plugin.getTypes().get(parts[1].toUpperCase(java.util.Locale.ROOT)), parts[2].toUpperCase(java.util.Locale.ROOT)).newBuilder().build(); //m.material.salt
 		} else if (type.equalsIgnoreCase("modeled")) {
-			String raw = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')')); // Extract content inside (...)
+			int open = s.indexOf('(');
+			int close = s.lastIndexOf(')');
+			if (open < 0 || close <= open) return null;
+			String raw = s.substring(open + 1, close); // Extract content inside (...)
 			String[] parts = raw.split(";");
 			Map<String, String> attributes = new HashMap<>();
 
 			for (String part : parts) {
 				String[] keyValue = part.split("=", 2);
 				if (keyValue.length == 2) {
-					attributes.put(keyValue[0].toLowerCase(), keyValue[1]);
+					attributes.put(keyValue[0].toLowerCase(java.util.Locale.ROOT), keyValue[1]);
 				}
 			}
 
@@ -84,7 +92,7 @@ public class ItemCreator extends TLibAPI{
 			Material material = Material.DIRT;
 			if (attributes.containsKey("type")) {
 				try {
-					material = Material.valueOf(attributes.get("type").toUpperCase());
+					material = Material.valueOf(attributes.get("type").toUpperCase(java.util.Locale.ROOT));
 				} catch (IllegalArgumentException e) {
 					Bukkit.getLogger().warning("[TLibs] Invalid material type in modeled item: " + attributes.get("type"));
 				}
@@ -114,7 +122,7 @@ public class ItemCreator extends TLibAPI{
 				Bukkit.getLogger().info("[TLibs] ERROR! This operation requires ItemsAdder and LoneLibs!");
 				return new ItemStack(Material.DIRT, 1);
 			}
-			String itemPath = s.split("\\.")[1]; //ia.tfmc:abyssalite
+			String itemPath = s.substring(dot + 1); //ia.tfmc:abyssalite
 			CustomStack stack = CustomStack.getInstance(itemPath);
 			if(stack != null) {
 				item = stack.getItemStack();
@@ -135,7 +143,7 @@ public class ItemCreator extends TLibAPI{
 	// Preserve configured legacy display-name and lore formatting.
 	@SuppressWarnings({"deprecation"})
 	public ItemStack getItemFromConfig(ConfigurationSection config) {
-		ItemStack i = new ItemStack(Material.valueOf(config.getString("material", "DIRT").toUpperCase()), 1);
+		ItemStack i = new ItemStack(Material.valueOf(config.getString("material", "DIRT").toUpperCase(java.util.Locale.ROOT)), 1);
 		ItemMeta meta = i.getItemMeta();
 		meta.setDisplayName(StringFormatter.formatHex(config.getString("name", "No Name")));
 		if(config.contains("model_data")) {

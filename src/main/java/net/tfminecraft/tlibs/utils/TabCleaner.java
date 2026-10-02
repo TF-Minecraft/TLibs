@@ -32,10 +32,10 @@ public class TabCleaner {
 		if (completions == null || prefix == null || prefix.isEmpty()) {
 			return;
 		}
-		String lowerPrefix = prefix.toLowerCase();
+		String lowerPrefix = prefix.toLowerCase(java.util.Locale.ROOT);
 		for (int i = 0; i < completions.size(); i++) {
 			String completion = completions.get(i);
-			if (completion == null || !completion.toLowerCase().startsWith(lowerPrefix)) {
+			if (completion == null || !completion.toLowerCase(java.util.Locale.ROOT).startsWith(lowerPrefix)) {
 				completions.remove(i);
 				i--;
 			}

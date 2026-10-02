@@ -47,7 +47,7 @@ public final class ArmorEquipEvent extends PlayerEvent implements Cancellable {
 
 	private static List<String> getBlockedMaterialNames(JavaPlugin plugin) {
 		try (InputStream inputStream = plugin.getResource("armorequipevent-blocked.txt")) {
-			assert inputStream != null;
+			if (inputStream == null) return new ArrayList<>();
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 				return reader.lines().collect(Collectors.toList());
 			} catch (Exception ignored1) {

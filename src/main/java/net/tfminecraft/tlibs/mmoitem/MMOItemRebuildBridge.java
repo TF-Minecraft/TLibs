@@ -231,9 +231,6 @@ public class MMOItemRebuildBridge implements Listener {
 		if (fromPlayer != null) {
 			return fromPlayer;
 		}
-		if (inOriginal != null && !inOriginal.getType().isAir()) {
-			return new ResolvedItem(job.inventory, job.slot, inOriginal);
-		}
 		return null;
 	}
 
