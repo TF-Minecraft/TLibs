@@ -42,6 +42,7 @@ class LifecycleServicesTest {
     @Test void lifecycleInitializesApisCommandsServicesAndReloadsDiskConfig()throws Exception{
         MockBukkit.mock();TLibs plugin=MockBukkit.load(TLibs.class);
         assertSame(plugin,TLibs.getInstance());assertNotNull(ItemScanService.get());assertNotNull(TLibs.getRebuildConfig());assertNotNull(TLibs.getSocketTierConfig());
+        assertThrows(NullPointerException.class,()->TLibs.getApiInstance(null));
         assertSame(TLibs.getItemAPI(),TLibs.getApiInstance(APIType.ITEM_API));assertSame(TLibs.getBlockAPI(),TLibs.getApiInstance(APIType.BLOCK_API));
         assertNotNull(TLibs.getItemAPI().getCreator());assertNotNull(TLibs.getBlockAPI().getChecker());
         assertNotNull(plugin.getCommand("tlibs").getExecutor());assertNotNull(plugin.getCommand("tlibs").getTabCompleter());
