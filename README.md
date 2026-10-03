@@ -24,14 +24,6 @@ TLibs supports the gameplay plugins that provide the player-facing experiences, 
 
 Technical documentation is maintained in [TF-Minecraft/Docs](https://github.com/TF-Minecraft/Docs).
 
-## License
-
-Copyright (c) 2026 TF-Minecraft contributors.
-
-TF-Minecraft-authored material in this repository is licensed under the
-[Artistic License 2.0](LICENSE). Third-party dependencies and bundled material
-retain their own licenses.
-
 ## Tests and coverage
 
 Run `mvn clean verify` with Java 21. The build runs the unit tests and enforces
@@ -40,3 +32,11 @@ exclusions. Instruction and branch coverage are reported separately.
 
 The HTML report is `target/site/jacoco/index.html`; the machine-readable report is
 `target/site/jacoco/jacoco.xml`. CI uploads these reports alongside test results.
+
+## License
+
+Copyright (c) 2026 TF-Minecraft contributors.
+
+TF-Minecraft-authored material in this repository is licensed under the
+[Artistic License 2.0](LICENSE). Third-party dependencies and bundled material
+retain their own licenses.
