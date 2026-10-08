@@ -26,7 +26,7 @@ Technical documentation is maintained in [TF-Minecraft/Docs](https://github.com/
 
 ## Tests and coverage
 
-Run `mvn clean verify` with Java 21 after preparing the pinned dependencies.
+Run `mvn clean verify` with Java 21 after preparing the [pinned dependencies](DEPENDENCIES.md#tlibs-source-builds).
 JUnit 5, Mockito and MockBukkit exercise item/block APIs, equipment and socket
 handling, inventory scanning, SQLite storage and plugin lifecycle. These tests
 do not start a live Paper server or verify the full dependent-plugin stack.
