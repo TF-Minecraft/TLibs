@@ -80,7 +80,25 @@ class EquipmentAssetSyncTest {
         ItemStack iron = mock(ItemStack.class);
         when(iron.getType()).thenReturn(Material.IRON_CHESTPLATE);
         assertFalse(sync.sync(iron));
+        Equippable noAsset = equippable(null, null);
+        when(iron.getData(DataComponentTypes.EQUIPPABLE)).thenReturn(noAsset);
+        assertFalse(sync.sync(iron));
+        Equippable vanillaAsset = equippable(LEATHER, null);
+        when(iron.getData(DataComponentTypes.EQUIPPABLE)).thenReturn(vanillaAsset);
+        assertFalse(sync.sync(iron));
+        verify(iron, never()).setData(any(io.papermc.paper.datacomponent.DataComponentType.Valued.class), any(Object.class));
         assertFalse(sync.sync(leather(BRONZE_RGB, null)));
+    }
+
+    @Test void ownAssetIsRemovedFromAPieceThatIsNoLongerLeather() {
+        // A helmet skin made the bronze helmet a carved-pumpkin model; it must not draw bronze armour underneath.
+        ItemStack pumpkin = mock(ItemStack.class);
+        when(pumpkin.getType()).thenReturn(Material.CARVED_PUMPKIN);
+        Equippable stale = equippable(BRONZE, LEATHER_SOUND);
+        when(pumpkin.getData(DataComponentTypes.EQUIPPABLE)).thenReturn(stale);
+        Equippable cleared = built(stale, null);
+        assertTrue(sync.sync(pumpkin));
+        verify(pumpkin).setData(DataComponentTypes.EQUIPPABLE, cleared);
     }
 
     @Test void plainLeatherAndOtherAssetsStayAsTheyAre() {

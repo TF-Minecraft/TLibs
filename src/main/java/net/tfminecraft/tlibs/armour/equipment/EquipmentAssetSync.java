@@ -16,7 +16,8 @@ import net.kyori.adventure.key.Key;
 /**
  * Points leather armour dyed with a custom-armour colour at that armour's
  * equipment asset, and points it back at leather once the colour no longer
- * matches a published asset. Only the equippable component changes; MMOItems
+ * matches a published asset. Items that are no longer leather lose an asset of
+ * ours. Only the equippable component changes; MMOItems
  * and ItemsAdder data stay as they are.
  */
 public final class EquipmentAssetSync {
@@ -33,7 +34,7 @@ public final class EquipmentAssetSync {
 
 	/** Updates the item in place and returns whether anything changed. */
 	public boolean sync(ItemStack item) {
-		if (item == null || !LEATHER.contains(item.getType())) {
+		if (item == null) {
 			return false;
 		}
 		Equippable current = item.getData(DataComponentTypes.EQUIPPABLE);
@@ -42,6 +43,15 @@ public final class EquipmentAssetSync {
 		}
 		Key currentAsset = current.assetId();
 		boolean ours = currentAsset != null && namespace.equals(currentAsset.namespace());
+		if (!LEATHER.contains(item.getType())) {
+			// A skin turned this piece into something else (e.g. a carved-pumpkin helmet model): our asset would
+			// still draw the old armour under it. Keep the other equip settings.
+			if (!ours) {
+				return false;
+			}
+			item.setData(DataComponentTypes.EQUIPPABLE, current.toBuilder().assetId(null).build());
+			return true;
+		}
 		Key wanted = wanted(item);
 		if (wanted == null) {
 			if (!ours) {

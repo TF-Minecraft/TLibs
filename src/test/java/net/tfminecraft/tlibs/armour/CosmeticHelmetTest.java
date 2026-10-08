@@ -157,7 +157,7 @@ class CosmeticHelmetTest {
         ItemStack item = item(Material.CARVED_PUMPKIN);
         pieces.get(item).tags.put("MMOITEMS_MAX_DURABILITY", 100);
         CosmeticHelmetFix.afterAppearanceChange(item, null, 0, null, List.of());
-        for (int broken = 0; broken < 4; broken++) {
+        for (int broken = 0; broken < 5; broken++) {
             Meta meta = meta(item);
             EquippableComponent equipment = meta.getEquippable();
             switch (broken) {
@@ -165,6 +165,7 @@ class CosmeticHelmetTest {
                 case 1 -> equipment.setDamageOnHurt(false);
                 case 2 -> equipment.setSwappable(false);
                 case 3 -> equipment.setCameraOverlay(NamespacedKey.minecraft("misc/pumpkinblur"));
+                case 4 -> equipment.setModel(NamespacedKey.fromString("tfmc_equipment:tfmc_submissions/old_armour"));
             }
             meta.setEquippable(equipment);
             CosmeticHelmetFix.afterAppearanceChange(item, null, 0, null, List.of());
@@ -172,6 +173,7 @@ class CosmeticHelmetTest {
             assertTrue(meta(item).getEquippable().isDamageOnHurt());
             assertTrue(meta(item).getEquippable().isSwappable());
             assertNull(meta(item).getEquippable().getCameraOverlay());
+            assertNull(meta(item).getEquippable().getModel(), "no armour layer under the model");
         }
     }
 
@@ -341,7 +343,8 @@ class CosmeticHelmetTest {
         @Override public EquippableComponent getEquippable() { return new Equipment(equipment).component(); }
         @Override public void setEquippable(EquippableComponent component) {
             equipment.slot = component.getSlot(); equipment.damage = component.isDamageOnHurt();
-            equipment.swap = component.isSwappable(); equipment.overlay = component.getCameraOverlay(); hasEquipment = true;
+            equipment.swap = component.isSwappable(); equipment.overlay = component.getCameraOverlay();
+            equipment.model = component.getModel(); hasEquipment = true;
         }
         @Override public Meta clone() { return new Meta(this); }
     }
@@ -350,8 +353,11 @@ class CosmeticHelmetTest {
         boolean damage;
         boolean swap;
         NamespacedKey overlay;
+        NamespacedKey model;
         Equipment() {}
-        Equipment(Equipment original) { slot = original.slot; damage = original.damage; swap = original.swap; overlay = original.overlay; }
+        Equipment(Equipment original) {
+            slot = original.slot; damage = original.damage; swap = original.swap; overlay = original.overlay; model = original.model;
+        }
         EquippableComponent component() {
             EquippableComponent component = mock(EquippableComponent.class);
             when(component.getSlot()).thenAnswer(call -> slot);
@@ -362,6 +368,8 @@ class CosmeticHelmetTest {
             doAnswer(call -> { swap = call.getArgument(0); return null; }).when(component).setSwappable(anyBoolean());
             when(component.getCameraOverlay()).thenAnswer(call -> overlay);
             doAnswer(call -> { overlay = call.getArgument(0); return null; }).when(component).setCameraOverlay(any());
+            when(component.getModel()).thenAnswer(call -> model);
+            doAnswer(call -> { model = call.getArgument(0); return null; }).when(component).setModel(any());
             return component;
         }
     }
