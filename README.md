@@ -26,12 +26,20 @@ Technical documentation is maintained in [TF-Minecraft/Docs](https://github.com/
 
 ## Tests and coverage
 
-Run `mvn clean verify` with Java 21. The build runs the unit tests and enforces
-100% executable runtime **line coverage** with JaCoCo, without production-class
-exclusions. Instruction and branch coverage are reported separately.
+Run `mvn clean verify` with Java 21 after preparing the pinned dependencies.
+JUnit 5, Mockito and MockBukkit exercise item/block APIs, equipment and socket
+handling, inventory scanning, SQLite storage and plugin lifecycle. These tests
+do not start a live Paper server or verify the full dependent-plugin stack.
 
-The HTML report is `target/site/jacoco/index.html`; the machine-readable report is
-`target/site/jacoco/jacoco.xml`. CI uploads these reports alongside test results.
+JaCoCo enforces 100% production line coverage with no exclusions; instruction
+and branch coverage are reported separately. HTML/XML reports are written to
+`target/site/jacoco/`, and Surefire results to `target/surefire-reports/`.
+Build CI uploads both.
+
+Run `python3 -m unittest discover -s tests -v` for the dependency installer and
+artifact validation tests. These use Python's standard-library `unittest`,
+report to the terminal and are outside the Java coverage gate. The Dependency
+installer workflow also checks release resolution and Maven installation.
 
 ## License
 
