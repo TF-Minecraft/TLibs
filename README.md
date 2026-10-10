@@ -11,7 +11,7 @@ Players encounter its effects through the plugins that depend on it: custom equi
 - **Common item recognition** — shared handling for vanilla items and supported custom-item sources, including MMOItems and ItemsAdder.
 - **Custom block support** — recognizes vanilla blocks, ItemsAdder blocks, and supported furniture hitboxes.
 - **Equipment appearance preservation** — carries supported skin and appearance information through item rebuilding.
-- **Shader-friendly custom armour** — adds every ItemsAdder custom armour to the resource pack as a vanilla equipment model, so it still shows with shader packs such as Iris or OptiFine.
+- **Shader-friendly custom armour** — adds every ItemsAdder custom armour to the resource pack as a vanilla equipment model, so it still shows with shader packs such as Iris or OptiFine. Once every armour has its model, ItemsAdder's legacy leather atlas is dropped from the pack, so the pack still loads on GPUs limited to 16384 px textures (most Intel graphics) however many armours are added.
 - **Tiered socket handling** — shared rules for socket categories and the gems or runes applied to them.
 - **Equipment events** — exposes armour equip changes so other plugins can respond consistently.
 - **Inventory scanning** — shared periodic and event-driven scans; gameplay plugins register handlers for their own item updates.

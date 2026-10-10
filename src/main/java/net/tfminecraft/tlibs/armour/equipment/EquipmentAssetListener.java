@@ -21,6 +21,8 @@ import org.bukkit.plugin.Plugin;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 
+import io.papermc.paper.event.entity.EntityEquipmentChangedEvent;
+
 /** Keeps worn custom armour on its equipment asset. Nothing changes until the asset is in the served pack. */
 public final class EquipmentAssetListener implements Listener {
 	private static final List<EquipmentSlot> ARMOUR = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST,
@@ -50,6 +52,17 @@ public final class EquipmentAssetListener implements Listener {
 	public void onArmourStand(PlayerArmorStandManipulateEvent event) {
 		LivingEntity stand = event.getRightClicked();
 		Bukkit.getScheduler().runTask(plugin, () -> syncWorn(stand));
+	}
+
+	/** Mobs, NPCs and armour stands that other plugins (or dispensers) dress after they spawn. */
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onEquipmentChange(EntityEquipmentChangedEvent event) {
+		LivingEntity entity = event.getEntity();
+		// Players are covered by PlayerArmorChangeEvent.
+		if (entity instanceof Player || event.getEquipmentChanges().keySet().stream().noneMatch(ARMOUR::contains)) {
+			return;
+		}
+		Bukkit.getScheduler().runTask(plugin, () -> syncWorn(entity));
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
