@@ -11,6 +11,17 @@ mmo-item-rebuild:
 tiered-sockets:
   enabled: true
 
+# Custom armour as vanilla equipment assets so it renders with shader packs.
+# Reads ItemsAdder armors_rendering entries and adds the assets to the pack on
+# every ItemsAdder pack build (iazip). Paths are relative to the plugins folder.
+equipment-assets:
+  enabled: true
+  namespace: tfmc_equipment
+  itemsadder-contents: ItemsAdder/contents
+  itemsadder-pack: ItemsAdder/output/generated.zip
+  # Wait this long after a pack build before re-checking worn armour.
+  resync-delay-ticks: 100
+
 socket-tier-groups:
   gemstones:
     "Basic Gemstone": 1

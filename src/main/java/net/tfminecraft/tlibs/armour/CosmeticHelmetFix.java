@@ -97,6 +97,8 @@ public final class CosmeticHelmetFix {
 		if (item.getType() == Material.CARVED_PUMPKIN) {
 			equippable.setCameraOverlay(null);
 		}
+		// An armour asset left from the piece's old look (equipment assets) would draw that armour under the model.
+		equippable.setModel(null);
 		meta.setEquippable(equippable);
 		item.setItemMeta(meta);
 		MmoItemTagPreserver.restoreMissing(item, tags);
@@ -119,7 +121,8 @@ public final class CosmeticHelmetFix {
 			return false;
 		}
 		EquippableComponent equippable = meta.getEquippable();
-		if (equippable.getSlot() != EquipmentSlot.HEAD || !equippable.isDamageOnHurt() || !equippable.isSwappable()) {
+		if (equippable.getSlot() != EquipmentSlot.HEAD || !equippable.isDamageOnHurt() || !equippable.isSwappable()
+				|| equippable.getModel() != null) {
 			return false;
 		}
 		return type != Material.CARVED_PUMPKIN || equippable.getCameraOverlay() == null;

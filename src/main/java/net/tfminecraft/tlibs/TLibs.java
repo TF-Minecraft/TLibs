@@ -5,6 +5,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import net.tfminecraft.tlibs.armour.ArmorEquipEvent;
 import net.tfminecraft.tlibs.armour.CosmeticHelmetListener;
+import net.tfminecraft.tlibs.armour.equipment.EquipmentAssetListener;
+import net.tfminecraft.tlibs.armour.equipment.EquipmentAssets;
+import net.tfminecraft.tlibs.armour.equipment.ItemsAdderEquipmentListener;
 import net.tfminecraft.tlibs.command.TLibsCommand;
 import net.tfminecraft.tlibs.config.RebuildConfig;
 import net.tfminecraft.tlibs.config.SocketTierConfig;
@@ -26,11 +29,14 @@ public class TLibs extends JavaPlugin {
 	private final SocketTierConfig socketTierConfig = new SocketTierConfig();
 	private final TLibsCommand tlibsCommand = new TLibsCommand();
 	private final MMOItemRebuildRegistrar rebuildRegistrar = new MMOItemRebuildRegistrar();
+	private EquipmentAssets equipmentAssets;
+	private EquipmentAssetListener equipmentListener;
 
 	@Override
 	public void onEnable() {
 		instance = this;
 		Bukkit.getLogger().info("[TLibs] Initializing...");
+		equipmentAssets = new EquipmentAssets(getLogger());
 
 		saveDefaultConfig();
 		reloadPluginConfig();
@@ -40,6 +46,7 @@ public class TLibs extends JavaPlugin {
 		ArmorEquipEvent.registerListener(this);
 		Bukkit.getPluginManager().registerEvents(new CosmeticHelmetListener(), this);
 		Bukkit.getPluginManager().registerEvents(new FurnitureRepairListener(), this);
+		registerEquipmentAssets();
 		registerRebuildBridge();
 		RebuildDebug.logAlways("startup complete bridgeRegistered=" + rebuildRegistrar.isRegistered());
 
@@ -59,6 +66,15 @@ public class TLibs extends JavaPlugin {
 		}
 	}
 
+	private void registerEquipmentAssets() {
+		equipmentListener = new EquipmentAssetListener(this, equipmentAssets);
+		Bukkit.getPluginManager().registerEvents(equipmentListener, this);
+		if (Bukkit.getPluginManager().getPlugin("ItemsAdder") != null) {
+			Bukkit.getPluginManager().registerEvents(
+					new ItemsAdderEquipmentListener(this, equipmentAssets, equipmentListener), this);
+		}
+	}
+
 	private void registerRebuildBridge() {
 		getServer().getPluginManager().registerEvents(rebuildRegistrar, this);
 		rebuildRegistrar.tryRegister();
@@ -68,6 +84,11 @@ public class TLibs extends JavaPlugin {
 		reloadConfig();
 		rebuildConfig.reload(getConfig());
 		socketTierConfig.reload(getConfig());
+		equipmentAssets.reload(getConfig(), getDataFolder().toPath().toAbsolutePath().getParent());
+		// Worn armour keeps an asset that was just switched off (or gains a new one) until it is resynchronised.
+		if (equipmentListener != null) {
+			equipmentListener.resyncAll();
+		}
 		RebuildDebug.logAlways("config reloaded enabled=" + rebuildConfig.isEnabled()
 				+ " debug-nbt=" + rebuildConfig.debugNbt()
 				+ " tiered-sockets=" + socketTierConfig.isEnabled());
@@ -97,6 +118,14 @@ public class TLibs extends JavaPlugin {
 
 	public static SocketTierConfig getSocketTierConfig() {
 		return instance.socketTierConfig;
+	}
+
+	public EquipmentAssets getEquipmentAssets() {
+		return equipmentAssets;
+	}
+
+	public EquipmentAssetListener getEquipmentListener() {
+		return equipmentListener;
 	}
 
 	public static ItemAPI getItemAPI() {
