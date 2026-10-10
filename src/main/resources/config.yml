@@ -21,6 +21,10 @@ equipment-assets:
   itemsadder-pack: ItemsAdder/output/generated.zip
   # Wait this long after a pack build before re-checking worn armour.
   resync-delay-ticks: 100
+  # Drop ItemsAdder's legacy armour atlas (all armours side by side in the leather texture)
+  # once every armour in it has an equipment asset. A wide atlas stops the pack loading on
+  # GPUs limited to 16384 px textures, such as most Intel graphics.
+  remove-legacy-atlas: true
 
 socket-tier-groups:
   gemstones:

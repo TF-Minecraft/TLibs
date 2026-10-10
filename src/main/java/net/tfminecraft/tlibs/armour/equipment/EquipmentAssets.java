@@ -29,6 +29,7 @@ public final class EquipmentAssets {
 	private Path contents;
 	private Path pack;
 	private long resyncDelayTicks = 100;
+	private boolean removeLegacyAtlas = true;
 	private volatile EquipmentPack sources = EquipmentPack.EMPTY;
 	private volatile Map<Integer, Key> published = Map.of();
 
@@ -47,6 +48,7 @@ public final class EquipmentAssets {
 		contents = pluginsFolder.resolve(config.getString(SECTION + ".itemsadder-contents", "ItemsAdder/contents"));
 		pack = pluginsFolder.resolve(config.getString(SECTION + ".itemsadder-pack", "ItemsAdder/output/generated.zip"));
 		resyncDelayTicks = Math.max(1, config.getLong(SECTION + ".resync-delay-ticks", 100));
+		removeLegacyAtlas = config.getBoolean(SECTION + ".remove-legacy-atlas", true);
 		refreshSources();
 		refreshPublished();
 	}
@@ -82,6 +84,35 @@ public final class EquipmentAssets {
 		snapshot.entries().forEach(pack);
 		published = snapshot.assets();
 		logger.info("[Equipment] Added " + published.size() + " custom armour sets to the pack");
+	}
+
+	/**
+	 * Drops ItemsAdder's legacy armour atlas from a pack being built once every armour
+	 * in it has an asset there. Call after {@link #addTo}.
+	 */
+	public void removeLegacyAtlas(LegacyArmourAtlas.Pack pack) {
+		if (!enabled || !removeLegacyAtlas) {
+			return;
+		}
+		LegacyArmourAtlas.Result result;
+		try {
+			result = LegacyArmourAtlas.removeCovered(pack, published.keySet());
+		} catch (RuntimeException e) {
+			// The pack build and the worn-armour resync must go on; the atlas just stays.
+			logger.warning("[Equipment] Kept the legacy armour atlas: could not read it (" + e + ")");
+			return;
+		}
+		if (!result.uncovered().isEmpty()) {
+			StringBuilder colours = new StringBuilder();
+			for (int colour : result.uncovered()) {
+				colours.append(colours.isEmpty() ? "" : ", ").append(String.format("#%06x", colour));
+			}
+			logger.warning("[Equipment] Kept the legacy armour atlas: no equipment asset for " + colours
+					+ ". Wide atlases stop the pack loading on GPUs limited to 16384 px textures.");
+		} else if (!result.removed().isEmpty()) {
+			logger.info("[Equipment] Removed " + result.removed().size()
+					+ " legacy armour atlas textures; custom armour renders through its equipment assets");
+		}
 	}
 
 	public EquipmentAssetSync sync() {

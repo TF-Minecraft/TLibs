@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -41,6 +42,8 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockito.MockedStatic;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+
+import io.papermc.paper.event.entity.EntityEquipmentChangedEvent;
 
 import dev.lone.itemsadder.api.Events.ItemsAdderLoadDataEvent;
 import dev.lone.itemsadder.api.Events.ItemsAdderPackCompressedEvent;
@@ -290,5 +293,105 @@ class EquipmentAssetsTest {
         verify(scheduler).runTaskLater(eq(plugin), task.capture(), eq(100L));
         task.getValue().run();
         verify(items).resyncAll();
+    }
+
+    private static final String ATLAS = "ia_overlay_1_21_2_plus/assets/minecraft/textures/entity/equipment/humanoid/leather.png";
+
+    /** A pack being built with the given entries. */
+    private static ItemsAdderPackCompressedEvent building(Map<String, byte[]> entries, Set<String> alreadyRemoved) throws Exception {
+        ItemsAdderPackCompressedEvent event = mock(ItemsAdderPackCompressedEvent.class);
+        // ItemsAdder's jar hides PackEntry's name from javac, so it is mocked through reflection.
+        Class<?> entryType = ItemsAdderPackCompressedEvent.class.getMethod("getEntry", String.class).getReturnType();
+        Map<String, Object> listing = new HashMap<>();
+        for (Map.Entry<String, byte[]> file : entries.entrySet()) {
+            Object entry = mock(entryType);
+            when(entryType.getMethod("getBytes").invoke(entry)).thenReturn(file.getValue());
+            when(entryType.getMethod("isRemoved").invoke(entry)).thenReturn(alreadyRemoved.contains(file.getKey()));
+            listing.put(file.getKey(), entry);
+            doReturn(entry).when(event).getEntry(file.getKey());
+        }
+        doReturn(listing).when(event).getEntries();
+        return event;
+    }
+
+    @Test void packBuildsDropTheLegacyAtlasOnceEveryArmourHasAnAsset() throws Exception {
+        EquipmentAssets assets = publishedBronze();
+        ItemsAdderEquipmentListener listener = new ItemsAdderEquipmentListener(mock(Plugin.class), assets, mock(EquipmentAssetListener.class));
+        String stale = "assets/minecraft/textures/models/armor/leather_layer_1.png";
+        ItemsAdderPackCompressedEvent pack = building(Map.of(ATLAS, LegacyArmourAtlasTest.atlasPng(BRONZE_RGB),
+                stale, LegacyArmourAtlasTest.atlasPng(0x999999), "pack.mcmeta", new byte[0]), Set.of(stale));
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(Bukkit::getScheduler).thenReturn(mock(BukkitScheduler.class));
+            listener.onPack(pack);
+        }
+        // An entry another listener already removed is not read again.
+        verify(pack).removeEntry(ATLAS);
+        verify(pack, never()).removeEntry(stale);
+        verify(logger).info("[Equipment] Removed 1 legacy armour atlas textures; custom armour renders through its equipment assets");
+    }
+
+    @Test void anArmourWithoutAnAssetKeepsTheAtlasAndSaysWhich() throws Exception {
+        EquipmentAssets assets = publishedBronze();
+        ItemsAdderPackCompressedEvent pack = building(Map.of(ATLAS, LegacyArmourAtlasTest.atlasPng(BRONZE_RGB, 0x00ff00, 0x0000aa)), Set.of());
+        assets.removeLegacyAtlas(new ItemsAdderEquipmentListener.EventPack(pack));
+        verify(pack, never()).removeEntry(anyString());
+        verify(logger).warning("[Equipment] Kept the legacy armour atlas: no equipment asset for #0000aa, #00ff00."
+                + " Wide atlases stop the pack loading on GPUs limited to 16384 px textures.");
+    }
+
+    @Test void anUnreadablePackKeepsTheAtlasWithoutFailingTheBuild() throws Exception {
+        EquipmentAssets assets = publishedBronze();
+        LegacyArmourAtlas.Pack broken = mock(LegacyArmourAtlas.Pack.class);
+        when(broken.paths()).thenThrow(new IllegalStateException("closed"));
+        assertDoesNotThrow(() -> assets.removeLegacyAtlas(broken));
+        verify(logger).warning("[Equipment] Kept the legacy armour atlas: could not read it (java.lang.IllegalStateException: closed)");
+        verify(broken, never()).remove(anyString());
+    }
+
+    @Test void theAtlasStaysWhenSwitchedOffOrAbsent() throws Exception {
+        bronzeSources();
+        ItemsAdderPackCompressedEvent pack = building(Map.of(ATLAS, LegacyArmourAtlasTest.atlasPng(BRONZE_RGB)), Set.of());
+        EquipmentAssets off = loaded("equipment-assets:\n  remove-legacy-atlas: false\n");
+        off.addTo((name, bytes) -> { });
+        off.removeLegacyAtlas(new ItemsAdderEquipmentListener.EventPack(pack));
+        EquipmentAssets disabled = loaded("equipment-assets:\n  enabled: false\n");
+        disabled.removeLegacyAtlas(new ItemsAdderEquipmentListener.EventPack(pack));
+        verify(pack, never()).getEntries();
+        verify(pack, never()).removeEntry(anyString());
+
+        EquipmentAssets on = loaded("");
+        on.addTo((name, bytes) -> { });
+        on.removeLegacyAtlas(new ItemsAdderEquipmentListener.EventPack(building(Map.of("pack.mcmeta", new byte[0]), Set.of())));
+        verify(logger, never()).info(startsWith("[Equipment] Removed"));
+        verify(logger, never()).warning(startsWith("[Equipment] Kept"));
+    }
+
+    @Test void mobsAndStandsDressedLaterGetTheirAsset() throws IOException {
+        EquipmentAssets assets = publishedBronze();
+        Plugin plugin = mock(Plugin.class);
+        BukkitScheduler scheduler = mock(BukkitScheduler.class);
+        List<Runnable> tasks = new ArrayList<>();
+        when(scheduler.runTask(eq(plugin), any(Runnable.class))).thenAnswer(call -> { tasks.add(call.getArgument(1)); return null; });
+        EquipmentAssetListener listener = new EquipmentAssetListener(plugin, assets);
+
+        LivingEntity zombie = mock(LivingEntity.class);
+        EntityEquipment equipment = mock(EntityEquipment.class);
+        ItemStack copy = bronzeLeather();
+        ItemStack worn = holding(copy);
+        when(equipment.getItem(EquipmentSlot.CHEST)).thenReturn(worn);
+        when(zombie.getEquipment()).thenReturn(equipment);
+        when(zombie.isValid()).thenReturn(true);
+        EntityEquipmentChangedEvent.EquipmentChange change = mock(EntityEquipmentChangedEvent.EquipmentChange.class);
+
+        try (MockedStatic<Bukkit> bukkit = mockStatic(Bukkit.class)) {
+            bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
+            listener.onEquipmentChange(new EntityEquipmentChangedEvent(zombie, Map.of(EquipmentSlot.HAND, change)));
+            listener.onEquipmentChange(new EntityEquipmentChangedEvent(mock(Player.class), Map.of(EquipmentSlot.CHEST, change)));
+            assertTrue(tasks.isEmpty());
+            listener.onEquipmentChange(new EntityEquipmentChangedEvent(zombie, Map.of(EquipmentSlot.CHEST, change)));
+            assertEquals(1, tasks.size());
+            tasks.get(0).run();
+        }
+        verify(equipment).setItem(EquipmentSlot.CHEST, copy);
     }
 }
