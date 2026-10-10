@@ -94,7 +94,14 @@ public final class EquipmentAssets {
 		if (!enabled || !removeLegacyAtlas) {
 			return;
 		}
-		LegacyArmourAtlas.Result result = LegacyArmourAtlas.removeCovered(pack, published.keySet());
+		LegacyArmourAtlas.Result result;
+		try {
+			result = LegacyArmourAtlas.removeCovered(pack, published.keySet());
+		} catch (RuntimeException e) {
+			// The pack build and the worn-armour resync must go on; the atlas just stays.
+			logger.warning("[Equipment] Kept the legacy armour atlas: could not read it (" + e + ")");
+			return;
+		}
 		if (!result.uncovered().isEmpty()) {
 			StringBuilder colours = new StringBuilder();
 			for (int colour : result.uncovered()) {

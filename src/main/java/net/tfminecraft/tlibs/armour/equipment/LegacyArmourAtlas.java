@@ -26,6 +26,8 @@ public final class LegacyArmourAtlas {
 	private static final int SLOT = 64;
 	/** Rows up to the shader's (7, 7) signature pixel. */
 	private static final int ROWS = 8;
+	/** 16384 armour slots; anything wider is not an ItemsAdder atlas and is not decoded. */
+	private static final int MAX_WIDTH = SLOT * 16384;
 	/** Undyed leather; its slot draws plain leather, not a custom armour. */
 	static final int VANILLA_LEATHER = 0xA06540;
 
@@ -119,7 +121,8 @@ public final class LegacyArmourAtlas {
 		int height = buffer.getInt(20);
 		boolean rgba = png[24] == 8 && png[25] == 6 && png[28] == 0;
 		// An atlas is many 64 px slots wide; plain or HD leather layers are 2:1.
-		if (buffer.getInt(8) != 13 || buffer.getInt(12) != 0x49484452 || !rgba || height < ROWS || width <= SLOT || width % SLOT != 0
+		if (buffer.getInt(8) != 13 || buffer.getInt(12) != 0x49484452 || !rgba || height < ROWS || width <= SLOT
+				|| width > MAX_WIDTH || width % SLOT != 0
 				|| width < 4L * height) {
 			return null;
 		}

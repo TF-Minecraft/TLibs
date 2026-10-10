@@ -339,6 +339,15 @@ class EquipmentAssetsTest {
                 + " Wide atlases stop the pack loading on GPUs limited to 16384 px textures.");
     }
 
+    @Test void anUnreadablePackKeepsTheAtlasWithoutFailingTheBuild() throws Exception {
+        EquipmentAssets assets = publishedBronze();
+        LegacyArmourAtlas.Pack broken = mock(LegacyArmourAtlas.Pack.class);
+        when(broken.paths()).thenThrow(new IllegalStateException("closed"));
+        assertDoesNotThrow(() -> assets.removeLegacyAtlas(broken));
+        verify(logger).warning("[Equipment] Kept the legacy armour atlas: could not read it (java.lang.IllegalStateException: closed)");
+        verify(broken, never()).remove(anyString());
+    }
+
     @Test void theAtlasStaysWhenSwitchedOffOrAbsent() throws Exception {
         bronzeSources();
         ItemsAdderPackCompressedEvent pack = building(Map.of(ATLAS, LegacyArmourAtlasTest.atlasPng(BRONZE_RGB)), Set.of());

@@ -171,6 +171,11 @@ class LegacyArmourAtlasTest {
         interlaced[28] = 1;
         assertNull(LegacyArmourAtlas.topRows(interlaced));
 
+        // A width whose buffer size would overflow is refused before anything is allocated.
+        byte[] huge = good.clone();
+        ByteBuffer.wrap(huge).putInt(16, 67_108_864);
+        assertNull(LegacyArmourAtlas.topRows(huge));
+
         // Chunks that run past the end of the file, or claim a negative length.
         byte[] truncated = Arrays.copyOf(good, 60);
         assertNull(LegacyArmourAtlas.topRows(truncated));
