@@ -170,6 +170,17 @@ class EquipmentPackTest {
             }
         }
         assertEquals(Set.of("pack.mcmeta", "assets/a/b.json"), PackListing.read(zip));
+
+        // A comment that contains an end-of-central-directory signature must not be taken for the real record.
+        Path tricky = root.resolve("tricky.zip");
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(tricky))) {
+            out.setComment(new String(new byte[] { 0x50, 0x4b, 0x05, 0x06 }, java.nio.charset.StandardCharsets.ISO_8859_1)
+                    + "x".repeat(30));
+            out.putNextEntry(new ZipEntry("pack.mcmeta"));
+            out.write(1);
+            out.closeEntry();
+        }
+        assertEquals(Set.of("pack.mcmeta"), PackListing.read(tricky));
     }
 
     @Test void rejectsFilesThatAreNotZips() throws IOException {

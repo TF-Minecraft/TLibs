@@ -54,7 +54,9 @@ public final class PackListing {
 
 	private static int findEnd(ByteBuffer tail) {
 		for (int i = tail.capacity() - END_SIZE; i >= 0; i--) {
-			if (tail.getInt(i) == END_SIGNATURE) {
+			// The signature can also appear inside the zip comment; the real record's comment ends the file.
+			if (tail.getInt(i) == END_SIGNATURE
+					&& i + END_SIZE + Short.toUnsignedInt(tail.getShort(i + 20)) == tail.capacity()) {
 				return i;
 			}
 		}
