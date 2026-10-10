@@ -85,6 +85,10 @@ public class TLibs extends JavaPlugin {
 		rebuildConfig.reload(getConfig());
 		socketTierConfig.reload(getConfig());
 		equipmentAssets.reload(getConfig(), getDataFolder().toPath().toAbsolutePath().getParent());
+		// Worn armour keeps an asset that was just switched off (or gains a new one) until it is resynchronised.
+		if (equipmentListener != null) {
+			equipmentListener.resyncAll();
+		}
 		RebuildDebug.logAlways("config reloaded enabled=" + rebuildConfig.isEnabled()
 				+ " debug-nbt=" + rebuildConfig.debugNbt()
 				+ " tiered-sockets=" + socketTierConfig.isEnabled());

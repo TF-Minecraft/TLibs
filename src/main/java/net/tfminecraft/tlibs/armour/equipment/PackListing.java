@@ -34,6 +34,10 @@ public final class PackListing {
 			}
 			long size = Integer.toUnsignedLong(tail.getInt(end + 12));
 			long offset = Integer.toUnsignedLong(tail.getInt(end + 16));
+			// ZIP64 archives store 0xFFFFFFFF here; a directory over 2 GiB can't be read into one array anyway.
+			if (size > Integer.MAX_VALUE) {
+				throw new IOException("central directory too large in " + zip);
+			}
 			if (offset + size > length) {
 				throw new IOException("central directory outside " + zip);
 			}

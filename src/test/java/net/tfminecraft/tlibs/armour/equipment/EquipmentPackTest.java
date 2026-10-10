@@ -135,6 +135,22 @@ class EquipmentPackTest {
         assertEquals(Map.of(), EquipmentPack.EMPTY.publishedIn(all));
     }
 
+    @Test void armoursSharingAnAssetPathAreSkippedAndLayersStayInsideTheirPack() throws IOException {
+        texture("tfmc_armor", "tfmc_armor", "layers/a", "a");
+        // A file outside every pack's resourcepack folder that a crafted layer path points at.
+        Files.createDirectories(root.resolve("secret"));
+        Files.writeString(root.resolve("secret/key.png"), "secret");
+        List<ArmourRendering> renderings = List.of(
+                new ArmourRendering("tfmc_armor", "bronze set", 0x000001, "layers/a", "layers/a"),
+                new ArmourRendering("tfmc_armor", "bronze_set", 0x000002, "layers/a", "layers/a"),
+                new ArmourRendering("tfmc_armor", "escape", 0x000003, "x:../../../../../../../secret/key", "layers/a"));
+        EquipmentPack pack = EquipmentPack.build(contents(), "tfmc_equipment", renderings, logger);
+
+        assertEquals(Map.of(), pack.assets());
+        verify(logger, times(2)).warning(contains("same asset path tfmc_armor/bronze_set"));
+        verify(logger).warning(contains("escape, layer texture not found"));
+    }
+
     @Test void unreadableContentsMeanNoTexture() {
         List<ArmourRendering> renderings = List.of(new ArmourRendering("a", "b", 1, "c", "d"));
         assertEquals(Map.of(), EquipmentPack.build(root.resolve("absent"), "tfmc_equipment", renderings, logger).assets());
@@ -169,6 +185,8 @@ class EquipmentPackTest {
     @Test void rejectsBrokenCentralDirectories() throws IOException {
         // Directory claims to extend past the end of the file.
         assertThrows(IOException.class, () -> PackListing.read(zipWithDirectory(new byte[0], 1000)));
+        // ZIP64 stores 0xFFFFFFFF as the size; anything past 2 GiB is refused instead of crashing.
+        assertThrows(IOException.class, () -> PackListing.read(zipWithDirectory(new byte[0], -1)));
         // Directory record without its signature.
         assertThrows(IOException.class, () -> PackListing.read(zipWithDirectory(new byte[46], 46)));
         // Record too short for its fixed header.

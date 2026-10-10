@@ -17,8 +17,8 @@ import net.kyori.adventure.key.Key;
  * Points leather armour dyed with a custom-armour colour at that armour's
  * equipment asset, and points it back at leather once the colour no longer
  * matches a published asset. Items that are no longer leather lose an asset of
- * ours. Only the equippable component changes; MMOItems
- * and ItemsAdder data stay as they are.
+ * ours. Only the equippable component changes; MMOItems and ItemsAdder data stay
+ * as they are.
  */
 public final class EquipmentAssetSync {
 	private static final Set<Material> LEATHER = EnumSet.of(Material.LEATHER_HELMET, Material.LEATHER_CHESTPLATE,

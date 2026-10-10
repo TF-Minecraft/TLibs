@@ -31,12 +31,19 @@ public record EquipmentPack(Map<String, byte[]> entries, Map<Integer, Key> asset
 
 	public static EquipmentPack build(Path contents, String namespace, List<ArmourRendering> renderings, Logger logger) {
 		Set<Integer> duplicates = duplicateColours(renderings);
+		Set<String> duplicatePaths = duplicatePaths(renderings);
 		Map<String, byte[]> entries = new LinkedHashMap<>();
 		Map<Integer, Key> assets = new HashMap<>();
 		for (ArmourRendering rendering : renderings) {
 			if (duplicates.contains(rendering.rgb())) {
 				logger.warning("[Equipment] Skipping " + rendering.namespace() + ":" + rendering.name()
 						+ ", another armour uses colour #" + String.format("%06x", rendering.rgb()));
+				continue;
+			}
+			// Names that differ only in characters an asset path can't hold would overwrite each other's files.
+			if (duplicatePaths.contains(rendering.assetPath())) {
+				logger.warning("[Equipment] Skipping " + rendering.namespace() + ":" + rendering.name()
+						+ ", another armour has the same asset path " + rendering.assetPath());
 				continue;
 			}
 			byte[] humanoid = readTexture(contents, rendering, rendering.layer1());
@@ -89,12 +96,28 @@ public record EquipmentPack(Map<String, byte[]> entries, Map<Integer, Key> asset
 		return duplicates;
 	}
 
+	private static Set<String> duplicatePaths(List<ArmourRendering> renderings) {
+		Set<String> seen = new HashSet<>();
+		Set<String> duplicates = new HashSet<>();
+		for (ArmourRendering rendering : renderings) {
+			if (!seen.add(rendering.assetPath())) {
+				duplicates.add(rendering.assetPath());
+			}
+		}
+		return duplicates;
+	}
+
 	private static byte[] readTexture(Path contents, ArmourRendering rendering, String layer) {
 		String[] texture = rendering.texture(layer);
 		String relative = "resourcepack/assets/" + texture[0] + "/textures/" + texture[1] + ".png";
 		try (Stream<Path> packs = Files.list(contents)) {
 			for (Path pack : packs.sorted().toList()) {
-				Path file = pack.resolve(relative);
+				Path root = pack.resolve("resourcepack").toAbsolutePath().normalize();
+				Path file = pack.resolve(relative).toAbsolutePath().normalize();
+				// A layer such as "ns:../../../secret" must not read files outside the pack's resourcepack folder.
+				if (!file.startsWith(root)) {
+					return null;
+				}
 				if (Files.isRegularFile(file)) {
 					return Files.readAllBytes(file);
 				}
