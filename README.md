@@ -37,8 +37,9 @@ and branch coverage are reported separately. HTML/XML reports are written to
 `target/site/jacoco/`, and Surefire results to `target/surefire-reports/`.
 Build CI uploads both.
 
-Run `python3 -m unittest discover -s tests -v` for the dependency installer and
-artifact validation tests. These use Python's standard-library `unittest`,
+Run `python3 -m unittest discover -s tests -v` for the dependency installer,
+artifact validation and [pull request size](https://github.com/TF-Minecraft/Docs/blob/main/PIPELINES.md#pull-request-size)
+tests. These use Python's standard-library `unittest`,
 report to the terminal and are outside the Java coverage gate. The Dependency
 installer workflow also checks release resolution and Maven installation.
 
