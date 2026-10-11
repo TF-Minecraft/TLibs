@@ -1,0 +1,18 @@
+name: Pull request size gate
+description: Label a pull request by size and require another member's approval from a set size
+inputs:
+  approval-size:
+    description: Smallest size label that needs an approval from someone other than the author
+    default: size:L
+  token:
+    description: Token that can read reviews and edit pull request labels
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        TFMC_ACTION_PATH: ${{ github.action_path }}
+        TFMC_APPROVAL_SIZE: ${{ inputs.approval-size }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: python3 "$TFMC_ACTION_PATH/../../../tools/pr-size.py"
