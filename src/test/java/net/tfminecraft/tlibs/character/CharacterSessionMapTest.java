@@ -188,6 +188,73 @@ class CharacterSessionMapTest {
     }
 
     @Test
+    void closeBeforeProviderShutdownFlushesAllEntriesOnce() {
+        CharacterSessionMap<String> map = recordingMap();
+        PlayerMock second = server.addPlayer();
+        CharacterSession first = identity.start(player, alice);
+        CharacterSession next = identity.start(second,
+                new CharacterRef(second.getUniqueId(), UUID.randomUUID()));
+        map.put(first, "first");
+        map.put(next, "second");
+
+        map.close();
+        map.close();
+        identity.end(player, SHUTDOWN);
+        identity.end(second, SHUTDOWN);
+
+        assertEquals(2, ended.size());
+        assertTrue(ended.contains(first.sessionId() + ":first"));
+        assertTrue(ended.contains(next.sessionId() + ":second"));
+        assertEquals(Optional.empty(), map.remove(first));
+        assertEquals(Optional.empty(), map.remove(next));
+    }
+
+    @Test
+    void closeAfterProviderUnregistersStillFlushesAndDrainsEveryEntryOnFailure() {
+        CharacterSessionMap<String> map = new CharacterSessionMap<>(plugin, (session, value) -> {
+            ended.add(value);
+            if (value.equals("first")) {
+                throw new IllegalArgumentException("first failed");
+            }
+            throw new AssertionError("second failed");
+        });
+        PlayerMock second = server.addPlayer();
+        CharacterSession first = identity.start(player, alice);
+        CharacterSession next = identity.start(second,
+                new CharacterRef(second.getUniqueId(), UUID.randomUUID()));
+        map.put(first, "first");
+        map.put(next, "second");
+        server.getServicesManager().unregisterAll(plugin);
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, map::close);
+
+        assertEquals(2, failure.getSuppressed().length);
+        assertEquals(2, ended.size());
+        assertTrue(ended.containsAll(List.of("first", "second")));
+        assertEquals(Optional.empty(), map.remove(first));
+        assertEquals(Optional.empty(), map.remove(next));
+        assertDoesNotThrow(map::close);
+    }
+
+    @Test
+    void nestedEndAndCloseFromCallbackDoNotFlushTheSameEntryAgain() {
+        AtomicReference<CharacterSessionMap<String>> map = new AtomicReference<>();
+        map.set(new CharacterSessionMap<>(plugin, (session, value) -> {
+            ended.add(value);
+            server.getPluginManager().callEvent(new CharacterSessionEndEvent(player, session, QUIT));
+            map.get().close();
+        }));
+        CharacterSession session = identity.start(player, alice);
+        map.get().put(session, "once");
+
+        identity.end(player, QUIT);
+
+        assertEquals(List.of("once"), ended);
+        assertEquals(Optional.empty(), map.get().remove(session));
+        assertThrows(IllegalStateException.class, () -> map.get().put(session, "late"));
+    }
+
+    @Test
     void closeStopsListeningAndRejectsFurtherPuts() {
         CharacterSessionMap<String> map = recordingMap();
         CharacterSession session = identity.start(player, alice);
@@ -200,7 +267,7 @@ class CharacterSessionMapTest {
         assertEquals(Optional.empty(), map.get(session));
         assertThrows(IllegalStateException.class, () -> map.put(session, "again"));
         identity.end(player, QUIT);
-        assertEquals(List.of(), ended);
+        assertEquals(List.of(session.sessionId() + ":value"), ended);
     }
 
     @Test

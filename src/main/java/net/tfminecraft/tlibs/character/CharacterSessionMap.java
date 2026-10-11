@@ -1,9 +1,12 @@
 package net.tfminecraft.tlibs.character;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
@@ -30,6 +33,7 @@ public final class CharacterSessionMap<V> {
     }
 
     private final Map<UUID, Entry<V>> entries = new HashMap<>();
+    private final Set<CharacterSession> ending = new HashSet<>();
     private final BiConsumer<CharacterSession, V> onEnd;
     private final Listener listener = new EndListener();
     private boolean closed;
@@ -100,12 +104,32 @@ public final class CharacterSessionMap<V> {
         return Optional.of(entry.value());
     }
 
-    /** Stops listening for session ends and drops every value without calling {@code onEnd}. */
+    /**
+     * Stops listening and flushes remaining values through {@code onEnd}, even if the provider
+     * has already stopped. Safe to call again or from a callback. All values are flushed before
+     * any callback failures are reported together as an {@link IllegalStateException}.
+     */
     public void close() {
         Characters.requireMainThread();
-        HandlerList.unregisterAll(listener);
-        entries.clear();
+        if (closed) {
+            return;
+        }
         closed = true;
+        HandlerList.unregisterAll(listener);
+        IllegalStateException failure = null;
+        for (Entry<V> entry : List.copyOf(entries.values())) {
+            try {
+                end(entry.session());
+            } catch (RuntimeException | Error ex) {
+                if (failure == null) {
+                    failure = new IllegalStateException("Failed to flush character session state");
+                }
+                failure.addSuppressed(ex);
+            }
+        }
+        if (failure != null) {
+            throw failure;
+        }
     }
 
     private void end(CharacterSession session) {
@@ -114,12 +138,16 @@ public final class CharacterSessionMap<V> {
         if (entry == null || !entry.session().equals(session)) {
             return;
         }
+        if (!ending.add(session)) {
+            return;
+        }
         try {
             if (onEnd != null) {
                 onEnd.accept(session, entry.value());
             }
         } finally {
             entries.remove(owner, entry);
+            ending.remove(session);
         }
     }
 
