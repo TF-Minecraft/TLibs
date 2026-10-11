@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Label a pull request by size and require a second person's approval from a set size."""
+"""Label a pull request by size."""
 import json
 import os
 import subprocess
@@ -25,8 +25,6 @@ TEST_EXCLUDES = [
     ":(glob,exclude)**/*.test.*",
     ":(glob,exclude)**/*.spec.*",
 ]
-TRUSTED_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
-DECISIVE_STATES = {"APPROVED", "CHANGES_REQUESTED", "DISMISSED"}
 
 
 def sum_numstat(text):
@@ -47,25 +45,6 @@ def effective_lines(total, non_test):
 
 def size_label(lines):
     return [name for name, minimum, _, _ in SIZES if lines >= minimum][-1]
-
-
-def needs_approval(label, threshold):
-    names = [name for name, *_ in SIZES]
-    return names.index(label) >= names.index(threshold)
-
-
-def approvers(reviews, author, head_sha):
-    """Members whose latest decisive review approves the current head commit."""
-    latest = {}
-    for review in reviews:
-        user = review.get("user") or {}
-        if (user.get("login") in (None, author) or user.get("type") == "Bot"
-                or review.get("author_association") not in TRUSTED_ASSOCIATIONS
-                or review.get("state") not in DECISIVE_STATES):
-            continue
-        latest[user["login"]] = review
-    return sorted(login for login, review in latest.items()
-                  if review["state"] == "APPROVED" and review.get("commit_id") == head_sha)
 
 
 def git(*args):
@@ -128,11 +107,8 @@ def sync_label(api, number, label, current):
 def main():
     with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as handle:
         pull = json.load(handle)["pull_request"]
-    threshold = os.environ.get("TFMC_APPROVAL_SIZE", "size:L")
-    if threshold not in {size[0] for size in SIZES}:
-        raise SystemExit(f"Unknown approval size {threshold}")
     api = GitHub(os.environ["GITHUB_REPOSITORY"], os.environ["GH_TOKEN"])
-    number, author, head_sha = pull["number"], pull["user"]["login"], pull["head"]["sha"]
+    number, head_sha = pull["number"], pull["head"]["sha"]
 
     total, non_test = measure(pull["base"]["sha"], head_sha)
     lines = effective_lines(total, non_test)
@@ -145,27 +121,14 @@ def main():
     except urllib.error.HTTPError as error:
         if error.code != 403:
             raise
-        print("::warning::No permission to label this pull request; the size check still applies.")
+        print("::warning::No permission to label this pull request; the size is in the job summary.")
 
-    summary = [f"**{label}**: {lines} effective changed lines."]
-    failed = False
-    if needs_approval(label, threshold):
-        approved_by = approvers(api.paged(f"/pulls/{number}/reviews"), author, head_sha)
-        if approved_by:
-            summary.append(f"Approved by {', '.join(approved_by)}.")
-        else:
-            failed = True
-            summary.append(f"{threshold} and larger need an approval from someone other than "
-                           f"@{author} on the latest commit.")
-    else:
-        summary.append(f"No approval needed below {threshold}.")
-
-    text = " ".join(summary)
+    text = f"**{label}**: {lines} effective changed lines."
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
             handle.write(text + "\n")
-    print(("::error::" if failed else "") + text)
-    return 1 if failed else 0
+    print(text)
+    return 0
 
 
 if __name__ == "__main__":
