@@ -43,6 +43,11 @@ public final class Characters {
         return provider().flatMap(identity -> identity.info(characterId));
     }
 
+    /** @see CharacterIdentity#deathId(UUID) */
+    public static Optional<UUID> deathId(UUID characterId) {
+        return provider().flatMap(identity -> identity.deathId(characterId));
+    }
+
     /**
      * An immutable copy of the provider's list.
      *

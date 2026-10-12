@@ -39,6 +39,11 @@ public interface CharacterIdentity {
     /** A snapshot of any character, online or offline, or empty if it is unknown. */
     Optional<CharacterInfo> info(UUID characterId);
 
+    /** The most recent death's durable identity, retained after revival; empty if unknown. */
+    default Optional<UUID> deathId(UUID characterId) {
+        return Optional.empty();
+    }
+
     /**
      * Every character the account owns. Empty means the account's records could not be read; an
      * empty list means the account has no characters. Callers must not treat unknown as none.

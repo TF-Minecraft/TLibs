@@ -50,6 +50,7 @@ class CharactersTest {
         assertEquals(Optional.empty(), Characters.lastPlayed(ref.ownerId()));
         assertEquals(Optional.empty(), Characters.legacyHeir(ref.ownerId()));
         assertFalse(Characters.legacyHeirsReady());
+        assertEquals(Optional.empty(), Characters.deathId(ref.characterId()));
         assertEquals("Steve", Characters.displayName(player));
     }
 
@@ -57,6 +58,7 @@ class CharactersTest {
     void providersWithoutReviewedHeirsReportNone() {
         assertEquals(Optional.empty(), new FakeIdentity().legacyHeir(UUID.randomUUID()));
         assertFalse(new FakeIdentity().legacyHeirsReady());
+        assertEquals(Optional.empty(), new FakeIdentity().deathId(UUID.randomUUID()));
     }
 
     @Test
@@ -70,6 +72,8 @@ class CharactersTest {
         when(identity.displayName(player)).thenReturn("Masked stranger");
         when(identity.legacyHeir(ref.ownerId())).thenReturn(Optional.of(ref));
         when(identity.legacyHeirsReady()).thenReturn(true);
+        UUID deathId = UUID.randomUUID();
+        when(identity.deathId(ref.characterId())).thenReturn(Optional.of(deathId));
         server.getServicesManager().register(CharacterIdentity.class, identity, plugin, ServicePriority.Normal);
 
         assertTrue(Characters.available());
@@ -80,6 +84,7 @@ class CharactersTest {
         assertEquals(Optional.of(info), Characters.lastPlayed(ref.ownerId()));
         assertEquals(Optional.of(ref), Characters.legacyHeir(ref.ownerId()));
         assertTrue(Characters.legacyHeirsReady());
+        assertEquals(Optional.of(deathId), Characters.deathId(ref.characterId()));
         assertEquals("Masked stranger", Characters.displayName(player));
     }
 
@@ -134,6 +139,7 @@ class CharactersTest {
                 () -> Characters.lastPlayed(ref.ownerId()),
                 () -> Characters.legacyHeir(ref.ownerId()),
                 () -> Characters.legacyHeirsReady(),
+                () -> Characters.deathId(ref.characterId()),
                 () -> Characters.displayName(player));
         for (Executable call : calls) {
             assertThrows(IllegalStateException.class, () -> runOffMainThread(call));
