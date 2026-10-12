@@ -57,6 +57,11 @@ public final class Characters {
         return provider().flatMap(identity -> identity.lastPlayed(ownerId));
     }
 
+    /** @see CharacterIdentity#legacyHeir(UUID) */
+    public static Optional<CharacterRef> legacyHeir(UUID ownerId) {
+        return provider().flatMap(identity -> identity.legacyHeir(ownerId));
+    }
+
     /** @see CharacterIdentity#displayName(Player) */
     public static String displayName(Player player) {
         return provider().map(identity -> identity.displayName(player)).orElseGet(player::getName);
