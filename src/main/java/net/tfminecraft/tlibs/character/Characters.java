@@ -43,9 +43,13 @@ public final class Characters {
         return provider().flatMap(identity -> identity.info(characterId));
     }
 
-    /** @see CharacterIdentity#characters(UUID) */
+    /**
+     * An immutable copy of the provider's list.
+     *
+     * @see CharacterIdentity#characters(UUID)
+     */
     public static Optional<List<CharacterInfo>> characters(UUID ownerId) {
-        return provider().flatMap(identity -> identity.characters(ownerId));
+        return provider().flatMap(identity -> identity.characters(ownerId)).map(List::copyOf);
     }
 
     /** @see CharacterIdentity#lastPlayed(UUID) */

@@ -12,6 +12,18 @@ import org.bukkit.entity.Player;
  *
  * <p>Every method must be called on the main thread. Returned values are immutable snapshots that
  * are safe to hand to background work.
+ *
+ * <p>A provider must:
+ * <ul>
+ *   <li>fire {@link CharacterSessionEndEvent} for a session, and let it finish, before starting
+ *       the account's next session;</li>
+ *   <li>never nest transitions for one account, such as starting a session from an end
+ *       listener;</li>
+ *   <li>never reuse a session ID;</li>
+ *   <li>fire a {@link CharacterSessionEndEvent.Reason#SHUTDOWN SHUTDOWN} end for every active
+ *       session when it disables;</li>
+ *   <li>return immutable lists.</li>
+ * </ul>
  */
 public interface CharacterIdentity {
 

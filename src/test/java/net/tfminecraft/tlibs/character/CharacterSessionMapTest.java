@@ -216,7 +216,7 @@ class CharacterSessionMapTest {
             if (value.equals("first")) {
                 throw new IllegalArgumentException("first failed");
             }
-            throw new AssertionError("second failed");
+            throw new UnsupportedOperationException("second failed");
         });
         PlayerMock second = server.addPlayer();
         CharacterSession first = identity.start(player, alice);
@@ -234,6 +234,65 @@ class CharacterSessionMapTest {
         assertEquals(Optional.empty(), map.remove(first));
         assertEquals(Optional.empty(), map.remove(next));
         assertDoesNotThrow(map::close);
+    }
+
+    @Test
+    void closeDoesNotCatchErrors() {
+        CharacterSessionMap<String> map = new CharacterSessionMap<>(plugin, (session, value) -> {
+            throw new AssertionError("fatal");
+        });
+        map.put(identity.start(player, alice), "value");
+
+        assertThrows(AssertionError.class, map::close);
+    }
+
+    @Test
+    void putEndsAValueLeftByAnEarlierSessionWhoseEndWasMissed() {
+        CharacterSessionMap<String> map = recordingMap();
+        CharacterSession missed = identity.start(player, alice);
+        map.put(missed, "left behind");
+        CharacterSession next = identity.start(player, bob);
+
+        assertTrue(map.put(next, "fresh"));
+        assertTrue(map.put(next, "fresher"));
+
+        assertEquals(List.of(missed.sessionId() + ":left behind"), ended);
+        assertEquals(Optional.of("fresher"), map.get(next));
+        assertEquals(Optional.empty(), map.remove(missed));
+    }
+
+    @Test
+    void failingOnEndForALeftValueIsLoggedAndThePutStillStores() {
+        CharacterSessionMap<String> map = new CharacterSessionMap<>(plugin, (session, value) -> {
+            ended.add(value);
+            throw new IllegalStateException("flush failed");
+        });
+        CharacterSession missed = identity.start(player, alice);
+        map.put(missed, "left behind");
+        CharacterSession next = identity.start(player, bob);
+
+        assertTrue(map.put(next, "fresh"));
+
+        assertEquals(List.of("left behind"), ended);
+        assertEquals(Optional.of("fresh"), map.get(next));
+        assertEquals(Optional.empty(), map.remove(missed));
+    }
+
+    @Test
+    void endingSessionDoesNotRemoveAValuePutByTheNextSessionDuringOnEnd() {
+        AtomicReference<CharacterSessionMap<String>> map = new AtomicReference<>();
+        AtomicReference<CharacterSession> next = new AtomicReference<>();
+        map.set(new CharacterSessionMap<>(plugin, (session, value) -> {
+            ended.add(value);
+            next.set(identity.start(player, bob));
+            map.get().put(next.get(), "next");
+        }));
+        map.get().put(identity.start(player, alice), "first");
+
+        identity.end(player, SWITCH);
+
+        assertEquals(List.of("first"), ended);
+        assertEquals(Optional.of("next"), map.get().get(next.get()));
     }
 
     @Test
