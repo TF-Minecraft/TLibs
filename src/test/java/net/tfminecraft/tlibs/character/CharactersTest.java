@@ -48,7 +48,15 @@ class CharactersTest {
         assertEquals(Optional.empty(), Characters.info(ref.characterId()));
         assertEquals(Optional.empty(), Characters.characters(ref.ownerId()));
         assertEquals(Optional.empty(), Characters.lastPlayed(ref.ownerId()));
+        assertEquals(Optional.empty(), Characters.legacyHeir(ref.ownerId()));
+        assertFalse(Characters.legacyHeirsReady());
         assertEquals("Steve", Characters.displayName(player));
+    }
+
+    @Test
+    void providersWithoutReviewedHeirsReportNone() {
+        assertEquals(Optional.empty(), new FakeIdentity().legacyHeir(UUID.randomUUID()));
+        assertFalse(new FakeIdentity().legacyHeirsReady());
     }
 
     @Test
@@ -60,6 +68,8 @@ class CharactersTest {
         when(identity.characters(ref.ownerId())).thenReturn(Optional.of(List.of(info)));
         when(identity.lastPlayed(ref.ownerId())).thenReturn(Optional.of(info));
         when(identity.displayName(player)).thenReturn("Masked stranger");
+        when(identity.legacyHeir(ref.ownerId())).thenReturn(Optional.of(ref));
+        when(identity.legacyHeirsReady()).thenReturn(true);
         server.getServicesManager().register(CharacterIdentity.class, identity, plugin, ServicePriority.Normal);
 
         assertTrue(Characters.available());
@@ -68,6 +78,8 @@ class CharactersTest {
         assertEquals(Optional.of(info), Characters.info(ref.characterId()));
         assertEquals(Optional.of(List.of(info)), Characters.characters(ref.ownerId()));
         assertEquals(Optional.of(info), Characters.lastPlayed(ref.ownerId()));
+        assertEquals(Optional.of(ref), Characters.legacyHeir(ref.ownerId()));
+        assertTrue(Characters.legacyHeirsReady());
         assertEquals("Masked stranger", Characters.displayName(player));
     }
 
@@ -120,6 +132,8 @@ class CharactersTest {
                 () -> Characters.info(ref.characterId()),
                 () -> Characters.characters(ref.ownerId()),
                 () -> Characters.lastPlayed(ref.ownerId()),
+                () -> Characters.legacyHeir(ref.ownerId()),
+                () -> Characters.legacyHeirsReady(),
                 () -> Characters.displayName(player));
         for (Executable call : calls) {
             assertThrows(IllegalStateException.class, () -> runOffMainThread(call));

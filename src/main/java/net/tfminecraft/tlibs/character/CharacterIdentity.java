@@ -51,6 +51,23 @@ public interface CharacterIdentity {
     Optional<CharacterInfo> lastPlayed(UUID ownerId);
 
     /**
+     * The character that inherits what the account owned before characters had their own bodies,
+     * money and memberships, or empty if the account has no reviewed heir. Plugins moving
+     * account-wide data onto characters give it to this character, so nothing is duplicated.
+     */
+    default Optional<CharacterRef> legacyHeir(UUID ownerId) {
+        return Optional.empty();
+    }
+
+    /**
+     * Whether {@link #legacyHeir(UUID)} answers from the reviewed heirs. Until it does, an empty
+     * heir means "not known yet", so plugins must not migrate or discard account-wide data.
+     */
+    default boolean legacyHeirsReady() {
+        return false;
+    }
+
+    /**
      * The name other players see now, including masks and temporary aliases. Use
      * {@link CharacterInfo#name()} for the real name.
      */
