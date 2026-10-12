@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,15 +24,18 @@ import org.bukkit.plugin.Plugin;
  * a stale value nor write into the next session.
  *
  * <p>When a session ends, the map calls {@code onEnd(session, value)} and then removes the entry.
+ * Inside end-event listeners the session is no longer current, so {@link #get(CharacterSession)}
+ * returns empty there; clean up in {@code onEnd} or with {@link #remove(CharacterSession)}.
  * Do not keep persisted state such as debts, refunds or character cooldowns here.
  *
- * <p>Main thread only. Call {@link #close()} when the owning plugin disables.
+ * <p>Main thread only. Call {@link #close()} last in the owning plugin's {@code onDisable}.
  */
 public final class CharacterSessionMap<V> {
 
     private record Entry<V>(CharacterSession session, V value) {
     }
 
+    private final Plugin plugin;
     private final Map<UUID, Entry<V>> entries = new HashMap<>();
     private final Set<CharacterSession> ending = new HashSet<>();
     private final BiConsumer<CharacterSession, V> onEnd;
@@ -49,14 +53,18 @@ public final class CharacterSessionMap<V> {
     public CharacterSessionMap(Plugin plugin, BiConsumer<CharacterSession, V> onEnd) {
         Objects.requireNonNull(plugin, "plugin");
         Characters.requireMainThread();
+        this.plugin = plugin;
         this.onEnd = onEnd;
         plugin.getServer().getPluginManager().registerEvents(listener, plugin);
     }
 
     /**
-     * Stores the value for the session's account, replacing any earlier value.
+     * Stores the value for the session's account, replacing any earlier value. A value left by an
+     * earlier session of the account is ended through {@code onEnd} first; a failing callback is
+     * logged and does not stop the put.
      *
      * @return false, storing nothing, if the session is not current
+     * @throws IllegalStateException if the map is closed
      */
     public boolean put(CharacterSession session, V value) {
         Objects.requireNonNull(session, "session");
@@ -68,11 +76,29 @@ public final class CharacterSessionMap<V> {
         if (!Characters.isCurrent(session)) {
             return false;
         }
+        Entry<V> stale = entries.get(ownerOf(session));
+        if (stale != null && !stale.session().equals(session)) {
+            try {
+                end(stale.session());
+            } catch (RuntimeException ex) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to end character session state", ex);
+            }
+            // The callback may have closed the map or ended this session too.
+            if (closed) {
+                throw new IllegalStateException("CharacterSessionMap is closed");
+            }
+            if (!Characters.isCurrent(session)) {
+                return false;
+            }
+        }
         entries.put(ownerOf(session), new Entry<>(session, value));
         return true;
     }
 
-    /** The value stored by this session, if the session is still current. */
+    /**
+     * The value stored by this session, if the session is still current. Empty inside end-event
+     * listeners, because the ending session is no longer current.
+     */
     public Optional<V> get(CharacterSession session) {
         Objects.requireNonNull(session, "session");
         Characters.requireMainThread();
@@ -83,7 +109,7 @@ public final class CharacterSessionMap<V> {
         return Optional.of(entry.value());
     }
 
-    /** The value stored by the player's current session. */
+    /** The value stored by the player's current session. Empty inside end-event listeners. */
     public Optional<V> get(Player player) {
         return Characters.currentSession(player).flatMap(this::get);
     }
@@ -106,8 +132,10 @@ public final class CharacterSessionMap<V> {
 
     /**
      * Stops listening and flushes remaining values through {@code onEnd}, even if the provider
-     * has already stopped. Safe to call again or from a callback. All values are flushed before
-     * any callback failures are reported together as an {@link IllegalStateException}.
+     * has already stopped. Safe to call again or from a callback. A callback that throws an
+     * exception does not stop the other flushes; the exceptions are then thrown together as
+     * suppressed exceptions on an {@link IllegalStateException}, so call this last in
+     * {@code onDisable}. Errors are not caught.
      */
     public void close() {
         Characters.requireMainThread();
@@ -120,7 +148,7 @@ public final class CharacterSessionMap<V> {
         for (Entry<V> entry : List.copyOf(entries.values())) {
             try {
                 end(entry.session());
-            } catch (RuntimeException | Error ex) {
+            } catch (RuntimeException ex) {
                 if (failure == null) {
                     failure = new IllegalStateException("Failed to flush character session state");
                 }

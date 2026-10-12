@@ -3,6 +3,7 @@ package net.tfminecraft.tlibs.character;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -80,6 +81,20 @@ class CharactersTest {
 
         assertEquals(Optional.empty(), Characters.characters(unreadable));
         assertEquals(Optional.of(List.of()), Characters.characters(ref.ownerId()));
+    }
+
+    @Test
+    void characterListsAreImmutableCopies() {
+        CharacterIdentity identity = mock(CharacterIdentity.class);
+        List<CharacterInfo> mutable = new ArrayList<>(List.of(info));
+        when(identity.characters(ref.ownerId())).thenReturn(Optional.of(mutable));
+        server.getServicesManager().register(CharacterIdentity.class, identity, plugin, ServicePriority.Normal);
+
+        List<CharacterInfo> characters = Characters.characters(ref.ownerId()).orElseThrow();
+        mutable.clear();
+
+        assertEquals(List.of(info), characters);
+        assertThrows(UnsupportedOperationException.class, () -> characters.add(info));
     }
 
     @Test
