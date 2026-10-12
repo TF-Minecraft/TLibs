@@ -83,6 +83,13 @@ public final class CharacterSessionMap<V> {
             } catch (RuntimeException ex) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to end character session state", ex);
             }
+            // The callback may have closed the map or ended this session too.
+            if (closed) {
+                throw new IllegalStateException("CharacterSessionMap is closed");
+            }
+            if (!Characters.isCurrent(session)) {
+                return false;
+            }
         }
         entries.put(ownerOf(session), new Entry<>(session, value));
         return true;

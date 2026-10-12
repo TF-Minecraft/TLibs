@@ -279,6 +279,37 @@ class CharacterSessionMapTest {
     }
 
     @Test
+    void putStoresNothingWhenTheLeftValuesOnEndClosesTheMap() {
+        AtomicReference<CharacterSessionMap<String>> map = new AtomicReference<>();
+        map.set(new CharacterSessionMap<>(plugin, (session, value) -> {
+            ended.add(value);
+            map.get().close();
+        }));
+        map.get().put(identity.start(player, alice), "left behind");
+        CharacterSession next = identity.start(player, bob);
+
+        assertThrows(IllegalStateException.class, () -> map.get().put(next, "fresh"));
+
+        assertEquals(List.of("left behind"), ended);
+        assertEquals(Optional.empty(), map.get().get(next));
+    }
+
+    @Test
+    void putStoresNothingWhenTheLeftValuesOnEndEndsTheNewSession() {
+        CharacterSessionMap<String> map = new CharacterSessionMap<>(plugin, (session, value) -> {
+            ended.add(value);
+            identity.start(player, alice);
+        });
+        map.put(identity.start(player, alice), "left behind");
+        CharacterSession next = identity.start(player, bob);
+
+        assertFalse(map.put(next, "fresh"));
+
+        assertEquals(List.of("left behind"), ended);
+        assertEquals(Optional.empty(), map.get(next));
+    }
+
+    @Test
     void endingSessionDoesNotRemoveAValuePutByTheNextSessionDuringOnEnd() {
         AtomicReference<CharacterSessionMap<String>> map = new AtomicReference<>();
         AtomicReference<CharacterSession> next = new AtomicReference<>();
