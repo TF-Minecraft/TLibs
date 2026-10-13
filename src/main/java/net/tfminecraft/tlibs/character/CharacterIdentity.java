@@ -45,6 +45,15 @@ public interface CharacterIdentity {
     }
 
     /**
+     * Living characters whose real name, {@link CharacterInfo#name()}, equals {@code name} ignoring
+     * case. Masks and temporary aliases never match. Several characters can share a name, so the
+     * result may hold more than one; it is empty when none match. The list is immutable.
+     */
+    default List<CharacterInfo> findByName(String name) {
+        return List.of();
+    }
+
+    /**
      * Every character the account owns. Empty means the account's records could not be read; an
      * empty list means the account has no characters. Callers must not treat unknown as none.
      */
