@@ -86,4 +86,19 @@ class CharacterEventsTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new CharacterDeathEvent(ref, deathId, at, UUID.randomUUID(), killerCharacter, "pvp"));
     }
+
+    @Test
+    void revivalCarriesTheCharacterAndTheDeathItCameBackFrom() {
+        UUID deathId = UUID.randomUUID();
+
+        CharacterRevivedEvent event = new CharacterRevivedEvent(ref, deathId);
+
+        assertSame(ref, event.getCharacter());
+        assertSame(deathId, event.getPreviousDeathId());
+        assertSame(CharacterRevivedEvent.getHandlerList(), event.getHandlers());
+        assertNotSame(CharacterDeathEvent.getHandlerList(), event.getHandlers());
+        assertFalse(event.isAsynchronous());
+        assertThrows(NullPointerException.class, () -> new CharacterRevivedEvent(null, deathId));
+        assertThrows(NullPointerException.class, () -> new CharacterRevivedEvent(ref, null));
+    }
 }
