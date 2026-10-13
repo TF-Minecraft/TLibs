@@ -57,6 +57,15 @@ public final class Characters {
         return provider().flatMap(identity -> identity.characters(ownerId)).map(List::copyOf);
     }
 
+    /**
+     * An immutable copy of the provider's list, or an empty list without a provider.
+     *
+     * @see CharacterIdentity#findByName(String)
+     */
+    public static List<CharacterInfo> findByName(String name) {
+        return provider().map(identity -> List.copyOf(identity.findByName(name))).orElse(List.of());
+    }
+
     /** @see CharacterIdentity#lastPlayed(UUID) */
     public static Optional<CharacterInfo> lastPlayed(UUID ownerId) {
         return provider().flatMap(identity -> identity.lastPlayed(ownerId));

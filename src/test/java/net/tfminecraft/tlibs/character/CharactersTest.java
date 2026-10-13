@@ -51,6 +51,7 @@ class CharactersTest {
         assertEquals(Optional.empty(), Characters.legacyHeir(ref.ownerId()));
         assertFalse(Characters.legacyHeirsReady());
         assertEquals(Optional.empty(), Characters.deathId(ref.characterId()));
+        assertEquals(List.of(), Characters.findByName("Alice"));
         assertEquals("Steve", Characters.displayName(player));
     }
 
@@ -59,6 +60,14 @@ class CharactersTest {
         assertEquals(Optional.empty(), new FakeIdentity().legacyHeir(UUID.randomUUID()));
         assertFalse(new FakeIdentity().legacyHeirsReady());
         assertEquals(Optional.empty(), new FakeIdentity().deathId(UUID.randomUUID()));
+    }
+
+    @Test
+    void providersWithoutNameLookupFindNobody() {
+        List<CharacterInfo> found = new FakeIdentity().findByName("Alice");
+
+        assertEquals(List.of(), found);
+        assertThrows(UnsupportedOperationException.class, () -> found.add(info));
     }
 
     @Test
@@ -74,6 +83,7 @@ class CharactersTest {
         when(identity.legacyHeirsReady()).thenReturn(true);
         UUID deathId = UUID.randomUUID();
         when(identity.deathId(ref.characterId())).thenReturn(Optional.of(deathId));
+        when(identity.findByName("alice")).thenReturn(List.of(info));
         server.getServicesManager().register(CharacterIdentity.class, identity, plugin, ServicePriority.Normal);
 
         assertTrue(Characters.available());
@@ -85,6 +95,7 @@ class CharactersTest {
         assertEquals(Optional.of(ref), Characters.legacyHeir(ref.ownerId()));
         assertTrue(Characters.legacyHeirsReady());
         assertEquals(Optional.of(deathId), Characters.deathId(ref.characterId()));
+        assertEquals(List.of(info), Characters.findByName("alice"));
         assertEquals("Masked stranger", Characters.displayName(player));
     }
 
@@ -115,6 +126,22 @@ class CharactersTest {
     }
 
     @Test
+    void nameMatchesAreImmutableCopiesThatKeepEveryMatch() {
+        CharacterIdentity identity = mock(CharacterIdentity.class);
+        CharacterInfo namesake = new CharacterInfo(new CharacterRef(UUID.randomUUID(), UUID.randomUUID()), "Alice",
+                CharacterStatus.ALIVE, null, Set.of(), 0, null);
+        List<CharacterInfo> mutable = new ArrayList<>(List.of(info, namesake));
+        when(identity.findByName("Alice")).thenReturn(mutable);
+        server.getServicesManager().register(CharacterIdentity.class, identity, plugin, ServicePriority.Normal);
+
+        List<CharacterInfo> found = Characters.findByName("Alice");
+        mutable.clear();
+
+        assertEquals(List.of(info, namesake), found);
+        assertThrows(UnsupportedOperationException.class, () -> found.add(info));
+    }
+
+    @Test
     void followsRegistrationAndUnregistrationWithoutCaching() {
         CharacterIdentity identity = mock(CharacterIdentity.class);
         when(identity.isCurrent(session)).thenReturn(true);
@@ -140,6 +167,7 @@ class CharactersTest {
                 () -> Characters.legacyHeir(ref.ownerId()),
                 () -> Characters.legacyHeirsReady(),
                 () -> Characters.deathId(ref.characterId()),
+                () -> Characters.findByName("Alice"),
                 () -> Characters.displayName(player));
         for (Executable call : calls) {
             assertThrows(IllegalStateException.class, () -> runOffMainThread(call));
