@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -94,6 +95,8 @@ class EstatesTest {
         assertThrows(NullPointerException.class, () -> Estates.report(null, "test", 1, Outcome.done()));
         assertThrows(NullPointerException.class, () -> Estates.report(deathId, null, 1, Outcome.done()));
         assertThrows(NullPointerException.class, () -> Estates.report(deathId, "test", 1, null));
+        assertThrows(IllegalArgumentException.class, () -> Estates.report(deathId, " ", 1, Outcome.done()));
+        assertThrows(IllegalArgumentException.class, () -> Estates.report(deathId, "test", -1, Outcome.done()));
         verifyNoInteractions(service);
     }
 
@@ -165,8 +168,21 @@ class EstatesTest {
         when(service.decision(deathId)).thenReturn(Optional.of(decision(deathId, 3)));
         assertFalse(Estates.guardHolds(decision), "a newer revision exists");
 
+        EstateDecision rewritten = new EstateDecision(deathId, testator, decision.diedAt(), decision.decidedAt(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Recipient.account("server:void"),
+                Recipient.FROZEN, Recipient.FROZEN, Recipient.SENDER, decision.revision());
+        when(service.decision(deathId)).thenReturn(Optional.of(rewritten));
+        assertFalse(Estates.guardHolds(decision), "the recipients changed without a new revision");
+
         when(service.decision(deathId)).thenReturn(Optional.empty());
         assertFalse(Estates.guardHolds(decision), "the service no longer has the decision");
+
+        when(service.decision(deathId)).thenReturn(Optional.of(decision));
+        CharacterRef otherOwner = new CharacterRef(UUID.randomUUID(), testator.characterId());
+        when(identity.info(testator.characterId())).thenReturn(Optional.of(
+                new CharacterInfo(otherOwner, "Ilvaran", CharacterStatus.DEAD, null, Set.of(), 0, null)));
+        assertFalse(Estates.guardHolds(decision), "the character belongs to another account");
+        when(identity.info(testator.characterId())).thenReturn(Optional.of(info(CharacterStatus.DEAD)));
 
         when(service.decision(deathId)).thenReturn(Optional.of(decision));
         when(service.stateOf(testator.characterId())).thenReturn(Optional.of(EstateState.REVERTED));
@@ -182,6 +198,28 @@ class EstatesTest {
 
         when(identity.info(testator.characterId())).thenReturn(Optional.empty());
         assertFalse(Estates.guardHolds(decision), "the testator cannot be read");
+    }
+
+    @Test
+    void readsNullAnswersFromABrokenServiceAsNothingKnown() {
+        EstateService service = registerService();
+        EstateFallback fallback = mock(EstateFallback.class);
+        server.getServicesManager().register(EstateFallback.class, fallback, plugin, ServicePriority.Normal);
+        registerIdentity(CharacterStatus.DEAD, deathId);
+        when(service.decision(deathId)).thenReturn(null);
+        when(service.decided()).thenReturn(null);
+        when(service.stateOf(testator.characterId())).thenReturn(null);
+
+        assertEquals(Optional.empty(), Estates.decision(deathId));
+        assertEquals(List.of(), Estates.decided());
+        assertEquals(Optional.empty(), Estates.stateOf(testator.characterId()));
+        assertFalse(Estates.guardHolds(decision));
+        assertSame(DeathGuild.UNAVAILABLE, Estates.deathGuild(testator.characterId(), deathId));
+        assertSame(GuildLookup.UNAVAILABLE, Estates.guild(UUID.randomUUID()));
+        assertSame(GuildLookup.UNAVAILABLE, Estates.guildByName("Thalendor"));
+
+        when(service.decided()).thenReturn(Arrays.asList(decision, null));
+        assertEquals(List.of(decision), Estates.decided());
     }
 
     @Test

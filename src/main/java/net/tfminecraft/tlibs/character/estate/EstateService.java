@@ -8,7 +8,8 @@ import java.util.UUID;
  * Estate records, registered in Bukkit's {@code ServicesManager} by RPCharacters. Most plugins call
  * it through {@link Estates}.
  *
- * <p>Every method must be called on the main thread. Returned values are immutable snapshots.
+ * <p>Every method must be called on the main thread. Returned values are immutable snapshots and are
+ * never {@code null}; {@link Estates} reads a {@code null} answer as empty.
  */
 public interface EstateService {
 
