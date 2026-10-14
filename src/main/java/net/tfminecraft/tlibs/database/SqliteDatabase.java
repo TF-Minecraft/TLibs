@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.function.Consumer;
 
 public final class SqliteDatabase {
@@ -73,6 +74,11 @@ public final class SqliteDatabase {
         }
     }
 
+    /**
+     * Attempts rollback for every failure; confirmed rollback preserves runtime/error identity.
+     * A confirmed SQLite auto-rollback keeps this connection and its settings usable.
+     * An uncertain rollback discards the connection; the owning store must be recreated.
+     */
     public void runTransaction(Consumer<Connection> work) {
         synchronized (this) {
             Connection conn = getConnection();
@@ -83,44 +89,52 @@ public final class SqliteDatabase {
                 work.accept(conn);
                 conn.commit();
                 completed = true;
-            } catch (SQLException | RuntimeException | Error e) {
+            } catch (Throwable e) {
                 failure = e;
+                Throwable rollbackFailure = null;
                 try {
                     conn.rollback();
                     completed = true;
-                } catch (SQLException | RuntimeException | Error rollbackError) {
-                    // Restoring auto-commit can commit partial work after a failed rollback.
-                    connection = null;
-                    try {
-                        conn.close();
-                    } catch (SQLException | RuntimeException | Error closeError) {
-                        if (closeError != rollbackError) rollbackError.addSuppressed(closeError);
+                } catch (Throwable rollbackError) {
+                    if (!alreadyRolledBack(conn)) {
+                        // Restoring auto-commit can commit partial work after a failed rollback.
+                        connection = null;
+                        try {
+                            conn.close();
+                        } catch (Throwable closeError) {
+                            if (closeError != rollbackError) rollbackError.addSuppressed(closeError);
+                        }
+                        if (e instanceof Error original) {
+                            if (rollbackError != original) original.addSuppressed(rollbackError);
+                            throw original;
+                        }
+                        SqliteDatabaseException wrapped = new SqliteDatabaseException("Transaction failed and rollback failed", rollbackError);
+                        wrapped.addSuppressed(e);
+                        failure = wrapped;
+                        throw wrapped;
                     }
-                    if (e instanceof Error original) {
-                        if (rollbackError != original) original.addSuppressed(rollbackError);
-                        throw original;
-                    }
-                    SqliteDatabaseException wrapped = new SqliteDatabaseException("Transaction failed and rollback failed", rollbackError);
-                    wrapped.addSuppressed(e);
-                    failure = wrapped;
-                    throw wrapped;
+                    // The successful BEGIN opened an empty transaction after SQLite's rollback.
+                    rollbackFailure = rollbackError;
+                    completed = true;
                 }
-                if (e instanceof SQLException) {
+                if (!(e instanceof RuntimeException || e instanceof Error)) {
                     SqliteDatabaseException wrapped = new SqliteDatabaseException("Transaction failed", e);
+                    if (rollbackFailure != null) wrapped.addSuppressed(rollbackFailure);
                     failure = wrapped;
                     throw wrapped;
                 }
+                if (rollbackFailure != null && rollbackFailure != e) e.addSuppressed(rollbackFailure);
                 if (e instanceof RuntimeException original) throw original;
                 throw (Error) e;
             } finally {
                 if (completed) {
                     try {
                         conn.setAutoCommit(true);
-                    } catch (SQLException | RuntimeException | Error restoreError) {
+                    } catch (Throwable restoreError) {
                         if (failure != null) {
                             if (restoreError != failure) failure.addSuppressed(restoreError);
                         } else {
-                            if (restoreError instanceof SQLException)
+                            if (!(restoreError instanceof RuntimeException || restoreError instanceof Error))
                                 throw new SqliteDatabaseException("Failed to restore auto-commit", restoreError);
                             if (restoreError instanceof RuntimeException original) throw original;
                             throw (Error) restoreError;
@@ -128,6 +142,19 @@ public final class SqliteDatabase {
                     }
                 }
             }
+        }
+    }
+
+    /** BEGIN cannot succeed inside a live transaction; success proves no uncommitted work remains. */
+    private static boolean alreadyRolledBack(Connection conn) {
+        try {
+            if (conn.getAutoCommit()) return false;
+            try (Statement statement = conn.createStatement()) {
+                statement.execute("BEGIN");
+            }
+            return true;
+        } catch (Throwable probeError) {
+            return false;
         }
     }
 
