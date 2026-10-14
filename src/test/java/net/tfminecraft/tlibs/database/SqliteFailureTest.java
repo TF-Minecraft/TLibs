@@ -41,8 +41,12 @@ class SqliteFailureTest {
             SqliteDatabase db=new SqliteDatabase(root.resolve("fake.db").toFile());
             doThrow(failure).when(c).commit();assertSame(failure,assertThrows(SqliteDatabaseException.class,()->db.runTransaction(conn->{})).getCause());verify(c).rollback();verify(c).setAutoCommit(true);
             SQLException rollback=new SQLException("rollback failed");doThrow(rollback).when(c).rollback();assertSame(rollback,assertThrows(SqliteDatabaseException.class,()->db.runTransaction(conn->{})).getCause());
-            IllegalStateException application=new IllegalStateException("application");assertSame(rollback,assertThrows(SqliteDatabaseException.class,()->db.runTransaction(conn->{throw application;})).getCause());
-            reset(c);doThrow(failure).when(c).setAutoCommit(true);assertSame(failure,assertThrows(SqliteDatabaseException.class,()->db.runTransaction(conn->{})).getCause());db.close();
+            assertThrows(SqliteDatabaseException.class,db::getConnection);
+            SqliteDatabase runtimeDb=new SqliteDatabase(root.resolve("runtime.db").toFile());
+            IllegalStateException application=new IllegalStateException("application");assertSame(rollback,assertThrows(SqliteDatabaseException.class,()->runtimeDb.runTransaction(conn->{throw application;})).getCause());
+            reset(c);doThrow(failure).when(c).setAutoCommit(true);
+            SqliteDatabase restoringDb=new SqliteDatabase(root.resolve("restoring.db").toFile());
+            assertSame(failure,assertThrows(SqliteDatabaseException.class,()->restoringDb.runTransaction(conn->{})).getCause());restoringDb.close();
         }
     }
     @Test void availabilityCanInitializeTheDriverAndWaitingInitializersRecheckState() throws Exception {

@@ -76,29 +76,56 @@ public final class SqliteDatabase {
     public void runTransaction(Consumer<Connection> work) {
         synchronized (this) {
             Connection conn = getConnection();
+            boolean completed = false;
+            Throwable failure = null;
             try {
                 conn.setAutoCommit(false);
                 work.accept(conn);
                 conn.commit();
-            } catch (SQLException e) {
+                completed = true;
+            } catch (SQLException | RuntimeException | Error e) {
+                failure = e;
                 try {
                     conn.rollback();
-                } catch (SQLException rollbackError) {
-                    throw new SqliteDatabaseException("Transaction failed and rollback failed", rollbackError);
+                    completed = true;
+                } catch (SQLException | RuntimeException | Error rollbackError) {
+                    // Restoring auto-commit can commit partial work after a failed rollback.
+                    connection = null;
+                    try {
+                        conn.close();
+                    } catch (SQLException | RuntimeException | Error closeError) {
+                        if (closeError != rollbackError) rollbackError.addSuppressed(closeError);
+                    }
+                    if (e instanceof Error original) {
+                        if (rollbackError != original) original.addSuppressed(rollbackError);
+                        throw original;
+                    }
+                    SqliteDatabaseException wrapped = new SqliteDatabaseException("Transaction failed and rollback failed", rollbackError);
+                    wrapped.addSuppressed(e);
+                    failure = wrapped;
+                    throw wrapped;
                 }
-                throw new SqliteDatabaseException("Transaction failed", e);
-            } catch (RuntimeException e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException rollbackError) {
-                    throw new SqliteDatabaseException("Transaction failed and rollback failed", rollbackError);
+                if (e instanceof SQLException) {
+                    SqliteDatabaseException wrapped = new SqliteDatabaseException("Transaction failed", e);
+                    failure = wrapped;
+                    throw wrapped;
                 }
-                throw e;
+                if (e instanceof RuntimeException original) throw original;
+                throw (Error) e;
             } finally {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (SQLException e) {
-                    throw new SqliteDatabaseException("Failed to restore auto-commit", e);
+                if (completed) {
+                    try {
+                        conn.setAutoCommit(true);
+                    } catch (SQLException | RuntimeException | Error restoreError) {
+                        if (failure != null) {
+                            if (restoreError != failure) failure.addSuppressed(restoreError);
+                        } else {
+                            if (restoreError instanceof SQLException)
+                                throw new SqliteDatabaseException("Failed to restore auto-commit", restoreError);
+                            if (restoreError instanceof RuntimeException original) throw original;
+                            throw (Error) restoreError;
+                        }
+                    }
                 }
             }
         }
