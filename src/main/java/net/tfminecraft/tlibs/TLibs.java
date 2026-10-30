@@ -14,6 +14,7 @@ import net.tfminecraft.tlibs.config.SocketTierConfig;
 import net.tfminecraft.tlibs.enums.APIType;
 import net.tfminecraft.tlibs.itemscan.ItemScanService;
 import net.tfminecraft.tlibs.listener.FurnitureRepairListener;
+import net.tfminecraft.tlibs.listener.LeftoverHologramSweep;
 import net.tfminecraft.tlibs.mmoitem.GemApplyPrimer;
 import net.tfminecraft.tlibs.mmoitem.MMOItemRebuildRegistrar;
 import net.tfminecraft.tlibs.objects.TLibAPI;
@@ -46,6 +47,9 @@ public class TLibs extends JavaPlugin {
 		ArmorEquipEvent.registerListener(this);
 		Bukkit.getPluginManager().registerEvents(new CosmeticHelmetListener(), this);
 		Bukkit.getPluginManager().registerEvents(new FurnitureRepairListener(), this);
+		LeftoverHologramSweep hologramSweep = new LeftoverHologramSweep(getLogger());
+		Bukkit.getPluginManager().registerEvents(hologramSweep, this);
+		hologramSweep.sweepLoaded();
 		registerEquipmentAssets();
 		registerRebuildBridge();
 		RebuildDebug.logAlways("startup complete bridgeRegistered=" + rebuildRegistrar.isRegistered());
