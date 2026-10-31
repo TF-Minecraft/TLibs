@@ -158,7 +158,7 @@ class ItemScanServiceTest {
     void pluginOwnedMenusAreSkippedWhilePlayerInventoryIsScanned() {
         Player player = playerWithPersonalView(InventoryType.CHEST);
         Inventory top = player.getOpenInventory().getTopInventory();
-        when(top.getHolder()).thenReturn(mock(InventoryHolder.class));
+        when(top.getHolder(false)).thenReturn(mock(InventoryHolder.class));
         when(top.getSize()).thenReturn(1);
         ItemStack stack = item(Material.STONE);
         when(top.getItem(0)).thenReturn(stack);
@@ -231,7 +231,7 @@ class ItemScanServiceTest {
         InventoryView view = mock(InventoryView.class);
         Inventory top = mock(Inventory.class);
         when(player.getInventory()).thenReturn(inventory);
-        when(inventory.getHolder()).thenReturn(player);
+        when(inventory.getHolder(false)).thenReturn(player);
         when(player.getOpenInventory()).thenReturn(view);
         when(view.getPlayer()).thenReturn(player);
         when(view.getTopInventory()).thenReturn(top);

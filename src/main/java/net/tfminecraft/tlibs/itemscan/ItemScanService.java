@@ -129,7 +129,7 @@ public final class ItemScanService implements Listener {
     }
 
     private static boolean isScannable(Inventory inventory) {
-        InventoryHolder holder = inventory.getHolder();
+        InventoryHolder holder = inventory.getHolder(false);
         if (holder == null) {
             return true;
         }
