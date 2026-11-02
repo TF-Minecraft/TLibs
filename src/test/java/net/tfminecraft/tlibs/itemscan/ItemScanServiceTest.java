@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -17,6 +18,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
@@ -194,6 +196,7 @@ class ItemScanServiceTest {
         ItemStack stack = item(Material.STONE);
         when(entity.getItemStack()).thenReturn(stack);
         ItemScanHandler handler = mock(ItemScanHandler.class);
+        when(handler.scan(any(), any(), anyInt(), any())).thenCallRealMethod();
         service.subscribe(handler);
         service.onPickup(new EntityPickupItemEvent(player, entity, 0));
         verify(handler).matches(stack);
@@ -218,15 +221,157 @@ class ItemScanServiceTest {
         pulse.run(); verify(handler).update(player, top, 0, stack);
     }
 
+    @Test
+    void unchangedSlotsSkipHandlersUntilTheItemChangesOrTheirTimeComes() {
+        Player player = playerWithPersonalView(InventoryType.CRAFTING);
+        PlayerInventory inventory = player.getInventory();
+        ItemStack stone = stable(Material.STONE);
+        when(inventory.getSize()).thenReturn(1);
+        when(inventory.getItem(0)).thenReturn(stone);
+        ItemScanHandler untilChanged = scanning(ItemScanHandler.WHEN_CHANGED);
+        ItemScanHandler later = scanning(System.currentTimeMillis() + 600_000L);
+        ItemScanHandler due = scanning(System.currentTimeMillis() - 1L);
+        ItemScanHandler oldApi = matchingHandler(); // Doesn't override scan: every scan, as before.
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(player));
+        pulse.run();
+        pulse.run();
+        verify(untilChanged).scan(player, inventory, 0, stone);
+        verify(later).scan(player, inventory, 0, stone);
+        verify(due, times(2)).scan(player, inventory, 0, stone);
+        verify(oldApi, times(2)).update(player, inventory, 0, stone);
+
+        ItemStack dirt = stable(Material.DIRT);
+        when(inventory.getItem(0)).thenReturn(dirt);
+        pulse.run();
+        pulse.run();
+        verify(untilChanged).scan(player, inventory, 0, dirt);
+        verify(later).scan(player, inventory, 0, dirt);
+
+        service.rescanAll();
+        pulse.run();
+        verify(untilChanged, times(2)).scan(player, inventory, 0, dirt);
+        service.onQuit(quit(player));
+        pulse.run();
+        verify(untilChanged, times(3)).scan(player, inventory, 0, dirt);
+        service.unsubscribe(mock(ItemScanHandler.class)); // Never subscribed: the remembered slots stay.
+        pulse.run();
+        verify(untilChanged, times(3)).scan(player, inventory, 0, dirt);
+        service.unsubscribe(later);
+        pulse.run();
+        verify(untilChanged, times(4)).scan(player, inventory, 0, dirt);
+    }
+
+    @Test
+    void aHandlerThatChangesTheItemLetsEveryHandlerSeeTheNewOneOnTheNextScan() {
+        Player player = playerWithPersonalView(InventoryType.CRAFTING);
+        PlayerInventory inventory = player.getInventory();
+        ItemStack raw = stable(Material.STONE);
+        ItemStack built = stable(Material.DIRT);
+        when(inventory.getSize()).thenReturn(1);
+        // The scan reads the slot, the second handler replaces the item, and the scan reads the slot again.
+        when(inventory.getItem(0)).thenReturn(raw, built);
+        ItemScanHandler first = scanning(ItemScanHandler.WHEN_CHANGED);
+        ItemScanHandler second = scanning(ItemScanHandler.WHEN_CHANGED);
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(player));
+        pulse.run();
+        pulse.run();
+        pulse.run();
+        verify(first).scan(player, inventory, 0, raw);
+        verify(second).scan(player, inventory, 0, raw);
+        verify(first).scan(player, inventory, 0, built);
+        verify(second).scan(player, inventory, 0, built);
+        verifyNoMoreInteractions(first, second);
+
+        // Emptying the slot, or changing the item in place, leaves nothing remembered either.
+        ItemStack eaten = item(Material.BREAD);
+        ItemStack before = item(Material.BREAD);
+        when(eaten.clone()).thenReturn(before);
+        when(inventory.getItem(0)).thenReturn(eaten, (ItemStack) null, eaten, eaten);
+        pulse.run();
+        pulse.run();
+        verify(first, times(2)).scan(player, inventory, 0, eaten);
+    }
+
+    @Test
+    void containerSlotsAreRememberedWhileThatContainerStaysOpen() {
+        Player player = playerWithPersonalView(InventoryType.CHEST);
+        InventoryView view = player.getOpenInventory();
+        Inventory chest = view.getTopInventory();
+        ItemStack stone = stable(Material.STONE);
+        when(chest.getSize()).thenReturn(1);
+        when(chest.getItem(0)).thenReturn(stone);
+        when(player.getInventory().getSize()).thenReturn(0);
+        ItemScanHandler handler = scanning(ItemScanHandler.WHEN_CHANGED);
+        bukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(player));
+        service.onInventoryOpen(new InventoryOpenEvent(view));
+        pulse.run();
+        verify(handler).scan(player, chest, 0, stone);
+
+        Inventory other = mock(Inventory.class);
+        when(other.getType()).thenReturn(InventoryType.CHEST);
+        when(other.getSize()).thenReturn(1);
+        when(other.getItem(0)).thenReturn(stone);
+        when(view.getTopInventory()).thenReturn(other);
+        pulse.run();
+        pulse.run();
+        verify(handler).scan(player, other, 0, stone);
+
+        // Closing it forgets it, so the same container is scanned again when reopened.
+        Inventory crafting = mock(Inventory.class);
+        when(crafting.getType()).thenReturn(InventoryType.CRAFTING);
+        when(view.getTopInventory()).thenReturn(crafting);
+        pulse.run();
+        when(view.getTopInventory()).thenReturn(other);
+        pulse.run();
+        verify(handler, times(2)).scan(player, other, 0, stone);
+        verify(crafting, never()).getItem(anyInt());
+
+        // Reopening it before a pulse sees the closed view scans it whole again too.
+        service.onInventoryOpen(new InventoryOpenEvent(view));
+        verify(handler, times(3)).scan(player, other, 0, stone);
+        pulse.run();
+        verify(handler, times(3)).scan(player, other, 0, stone);
+    }
+
+    @Test
+    void scansWithoutHandlersReadNoSlots() {
+        Player player = playerWithPersonalView(InventoryType.CHEST);
+        service.onInventoryOpen(new InventoryOpenEvent(player.getOpenInventory()));
+        verify(player.getOpenInventory().getTopInventory(), never()).getSize();
+        verify(player.getInventory(), never()).getSize();
+    }
+
     private ItemScanHandler matchingHandler() {
         ItemScanHandler handler = mock(ItemScanHandler.class);
         when(handler.matches(any())).thenReturn(true);
+        when(handler.scan(any(), any(), anyInt(), any())).thenCallRealMethod();
         service.subscribe(handler);
         return handler;
     }
 
+    private ItemScanHandler scanning(long recheckAt) {
+        ItemScanHandler handler = mock(ItemScanHandler.class);
+        when(handler.scan(any(), any(), anyInt(), any())).thenReturn(recheckAt);
+        service.subscribe(handler);
+        return handler;
+    }
+
+    /** An item whose copy equals it, as an unchanged slot's does. */
+    private ItemStack stable(Material material) {
+        ItemStack item = item(material);
+        when(item.clone()).thenReturn(item);
+        return item;
+    }
+
+    private static PlayerQuitEvent quit(Player player) {
+        PlayerQuitEvent event = mock(PlayerQuitEvent.class);
+        when(event.getPlayer()).thenReturn(player);
+        return event;
+    }
+
     private Player playerWithPersonalView(InventoryType type) {
         Player player = mock(Player.class);
+        when(player.getUniqueId()).thenReturn(UUID.randomUUID());
         PlayerInventory inventory = mock(PlayerInventory.class);
         InventoryView view = mock(InventoryView.class);
         Inventory top = mock(Inventory.class);
@@ -242,6 +387,7 @@ class ItemScanServiceTest {
     private ItemStack item(Material material) {
         ItemStack item = mock(ItemStack.class);
         when(item.getType()).thenReturn(material);
+        when(item.isEmpty()).thenReturn(material == Material.AIR);
         return item;
     }
 }
