@@ -14,7 +14,7 @@ Players encounter its effects through the plugins that depend on it: custom equi
 - **Shader-friendly custom armour** — adds every ItemsAdder custom armour to the resource pack as a vanilla equipment model, so it still shows with shader packs such as Iris or OptiFine. Once every armour has its model, ItemsAdder's legacy leather atlas is dropped from the pack, so the pack still loads on GPUs limited to 16384 px textures (most Intel graphics) however many armours are added.
 - **Tiered socket handling** — shared rules for socket categories and the gems or runes applied to them.
 - **Equipment events** — exposes armour equip changes so other plugins can respond consistently.
-- **Inventory scanning** — shared periodic and event-driven scans; gameplay plugins register handlers for their own item updates.
+- **Inventory scanning** — shared periodic and event-driven scans; gameplay plugins register handlers for their own item updates, and a handler can let the scan skip slots whose item hasn't changed until it is due again.
 - **Shared persistence and utilities** — provides database support and common text, time, and location helpers for dependent plugins.
 
 TLibs supports the gameplay plugins that provide the player-facing experiences, keeping common behavior in one place.
