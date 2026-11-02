@@ -325,6 +325,12 @@ class ItemScanServiceTest {
         pulse.run();
         verify(handler, times(2)).scan(player, other, 0, stone);
         verify(crafting, never()).getItem(anyInt());
+
+        // Reopening it before a pulse sees the closed view scans it whole again too.
+        service.onInventoryOpen(new InventoryOpenEvent(view));
+        verify(handler, times(3)).scan(player, other, 0, stone);
+        pulse.run();
+        verify(handler, times(3)).scan(player, other, 0, stone);
     }
 
     @Test

@@ -104,6 +104,8 @@ public final class ItemScanService implements Listener {
         if (!(event.getPlayer() instanceof Player player)) {
             return;
         }
+        // Opening a container scans it whole, as before, even when the same one was just closed and reopened
+        memoryOf(player).container = null;
         scanOpenView(player, event.getView());
     }
 
