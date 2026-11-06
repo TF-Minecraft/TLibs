@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import net.tfminecraft.tlibs.armour.ArmorEquipEvent;
 import net.tfminecraft.tlibs.armour.CosmeticHelmetListener;
+import net.tfminecraft.tlibs.armour.FalseBreakRepair;
 import net.tfminecraft.tlibs.armour.equipment.EquipmentAssetListener;
 import net.tfminecraft.tlibs.armour.equipment.EquipmentAssets;
 import net.tfminecraft.tlibs.armour.equipment.ItemsAdderEquipmentListener;
@@ -43,6 +44,7 @@ public class TLibs extends JavaPlugin {
 		reloadPluginConfig();
 		initializeAPIs();
 		ItemScanService.start(this);
+		ItemScanService.get().subscribe(new FalseBreakRepair());
 		GemApplyPrimer.init(this);
 		ArmorEquipEvent.registerListener(this);
 		Bukkit.getPluginManager().registerEvents(new CosmeticHelmetListener(), this);
