@@ -293,6 +293,138 @@ class CosmeticHelmetTest {
         assertEquals(50, meta(helmet).getDamage());
     }
 
+    @Test
+    void leavingAHatLookForLeatherDropsTheHatBarAndRescalesTheDamage() {
+        // Koda's Stygmetal helmet: 816/1003 under a hat look (bar 1003, damage 187), then a leather skin.
+        ItemStack item = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(item).setMaxDamage(1003);
+        meta(item).setDamage(187);
+        CosmeticHelmetFix.afterAppearanceChange(item, Material.CARVED_PUMPKIN, 187, 1003, List.of());
+        assertFalse(meta(item).hasMaxDamage());
+        assertEquals(10, meta(item).getDamage(), "816/1003 is 81% left, so 10 damage on leather's 55");
+        clearInvocations(item);
+        CosmeticHelmetFix.afterAppearanceChange(item, Material.LEATHER_HELMET, 10, null, List.of());
+        verify(item, never()).setItemMeta(any());
+    }
+
+    @Test
+    void reskinningAPieceThatAlreadyReadsBrokenRescalesIt() {
+        ItemStack item = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(item).setDamage(185);
+        CosmeticHelmetFix.afterAppearanceChange(item, Material.LEATHER_HELMET, 185, null, List.of());
+        assertEquals(10, meta(item).getDamage());
+        ItemStack full = crafted(Material.LEATHER_HELMET, 1000, 1000);
+        meta(full).setDamage(30);
+        CosmeticHelmetFix.afterAppearanceChange(full, Material.CARVED_PUMPKIN, 30, null, List.of());
+        assertEquals(0, meta(full).getDamage());
+        assertEquals(1000, pieces.get(full).tags.get("MMOITEMS_DURABILITY"), "MMOItems durability is untouched");
+    }
+
+    @Test
+    void rescaleKeepsBarsTheHatLookDidNotAddAndLeavesOtherItemsAlone() {
+        ItemStack ownBar = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(ownBar).setMaxDamage(400);
+        meta(ownBar).setDamage(300);
+        CosmeticHelmetFix.afterAppearanceChange(ownBar, Material.CARVED_PUMPKIN, 300, 400, List.of());
+        assertEquals(400, meta(ownBar).getMaxDamage());
+        assertEquals(74, meta(ownBar).getDamage());
+        ItemStack fromHelmet = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(fromHelmet).setMaxDamage(1003);
+        meta(fromHelmet).setDamage(187);
+        CosmeticHelmetFix.afterAppearanceChange(fromHelmet, Material.DIAMOND_HELMET, 187, 1003, List.of());
+        assertEquals(1003, meta(fromHelmet).getMaxDamage(), "only a hat look's bar is dropped");
+        ItemStack untagged = item(Material.LEATHER_HELMET);
+        meta(untagged).setDamage(40);
+        CosmeticHelmetFix.afterAppearanceChange(untagged, Material.CARVED_PUMPKIN, 40, null, List.of());
+        assertEquals(40, meta(untagged).getDamage());
+        ItemStack undamageable = crafted(Material.PAPER, 1003, 816);
+        CosmeticHelmetFix.afterAppearanceChange(undamageable, Material.LEATHER_HELMET, 0, null, List.of());
+        verify(undamageable, never()).setItemMeta(any());
+        ItemStack plainMeta = crafted(Material.LEATHER_HELMET, 1003, 816);
+        ItemMeta ordinaryMeta = mock(ItemMeta.class);
+        when(ordinaryMeta.clone()).thenReturn(ordinaryMeta);
+        pieces.get(plainMeta).meta = ordinaryMeta;
+        CosmeticHelmetFix.afterAppearanceChange(plainMeta, Material.CARVED_PUMPKIN, 0, null, List.of());
+        verify(plainMeta, never()).setItemMeta(any());
+        assertFalse(CosmeticHelmetFix.rescaleVanillaDamage(null, Material.CARVED_PUMPKIN, List.of()));
+        assertFalse(CosmeticHelmetFix.rescaleVanillaDamage(item(Material.AIR), Material.CARVED_PUMPKIN, List.of()));
+    }
+
+    @Test
+    void falseBreaksAreFoundOnlyWhileMmoItemsDurabilityIsLeft() {
+        ItemStack broken = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(broken).setDamage(185);
+        assertTrue(CosmeticHelmetFix.showsFalseBreak(broken));
+        meta(broken).setDamage(54);
+        assertFalse(CosmeticHelmetFix.showsFalseBreak(broken));
+        ItemStack reallyBroken = crafted(Material.LEATHER_HELMET, 1003, 0);
+        meta(reallyBroken).setDamage(55);
+        assertFalse(CosmeticHelmetFix.showsFalseBreak(reallyBroken));
+        ItemStack noValue = item(Material.LEATHER_HELMET);
+        pieces.get(noValue).tags.put("MMOITEMS_MAX_DURABILITY", 1003);
+        meta(noValue).setDamage(60);
+        assertTrue(CosmeticHelmetFix.showsFalseBreak(noValue), "no durability tag means a full bar");
+        ItemStack untagged = item(Material.LEATHER_HELMET);
+        meta(untagged).setDamage(60);
+        assertFalse(CosmeticHelmetFix.showsFalseBreak(untagged));
+        ItemStack paper = crafted(Material.PAPER, 1003, 816);
+        meta(paper).setDamage(60);
+        assertFalse(CosmeticHelmetFix.showsFalseBreak(paper));
+        ItemStack plainMeta = crafted(Material.LEATHER_HELMET, 1003, 816);
+        ItemMeta ordinaryMeta = mock(ItemMeta.class);
+        when(ordinaryMeta.clone()).thenReturn(ordinaryMeta);
+        pieces.get(plainMeta).meta = ordinaryMeta;
+        assertFalse(CosmeticHelmetFix.showsFalseBreak(plainMeta));
+        assertFalse(CosmeticHelmetFix.showsFalseBreak(null));
+        assertFalse(CosmeticHelmetFix.showsFalseBreak(item(Material.AIR)));
+    }
+
+    @Test
+    void repairPutsTheBarBackEvenOnePointPastItsEnd() {
+        ItemStack broken = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(broken).setDamage(185);
+        assertTrue(CosmeticHelmetFix.repairFalseBreak(broken));
+        assertEquals(10, meta(broken).getDamage());
+        assertFalse(CosmeticHelmetFix.repairFalseBreak(broken));
+        // 1/100 left maps to 54 of 55: one point from 55, which the reskin tolerance would leave broken.
+        ItemStack edge = crafted(Material.LEATHER_HELMET, 100, 1);
+        meta(edge).setDamage(55);
+        assertTrue(CosmeticHelmetFix.repairFalseBreak(edge));
+        assertEquals(54, meta(edge).getDamage());
+        ItemStack hat = crafted(Material.CARVED_PUMPKIN, 100, 50);
+        meta(hat).setMaxDamage(100);
+        meta(hat).setDamage(100);
+        assertTrue(CosmeticHelmetFix.repairFalseBreak(hat));
+        assertEquals(50, meta(hat).getDamage());
+        assertEquals(100, meta(hat).getMaxDamage());
+    }
+
+    @Test
+    void scanHandlerRepairsFalseBreaksInInventoriesAndPickups() {
+        FalseBreakRepair repair = new FalseBreakRepair();
+        ItemStack broken = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(broken).setDamage(185);
+        assertTrue(repair.matches(broken));
+        org.bukkit.inventory.Inventory inventory = mock(org.bukkit.inventory.Inventory.class);
+        repair.update(null, inventory, 20, broken);
+        assertEquals(10, meta(broken).getDamage());
+        verify(inventory).setItem(20, broken);
+        assertFalse(repair.matches(broken));
+        repair.update(null, inventory, 20, broken);
+        verify(inventory, times(1)).setItem(anyInt(), any());
+        ItemStack picked = crafted(Material.LEATHER_HELMET, 1003, 816);
+        meta(picked).setDamage(185);
+        repair.update(null, null, -1, picked);
+        assertEquals(10, meta(picked).getDamage());
+    }
+
+    private ItemStack crafted(Material material, int max, int current) {
+        ItemStack item = item(material);
+        pieces.get(item).tags.putAll(Map.of("MMOITEMS_ITEM_TYPE", "HELMETS", "MMOITEMS_MAX_DURABILITY", max,
+                "MMOITEMS_DURABILITY", current));
+        return item;
+    }
+
     private ItemStack protectedHelmet() {
         ItemStack item = item(Material.CARVED_PUMPKIN);
         pieces.get(item).tags.put("MMOITEMS_MAX_DURABILITY", 100);

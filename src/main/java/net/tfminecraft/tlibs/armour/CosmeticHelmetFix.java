@@ -23,6 +23,7 @@ public final class CosmeticHelmetFix {
 			Integer previousMaxDamage, List<SavedTag> tags) {
 		MmoItemTagPreserver.restoreMissing(item, tags);
 		if (!shouldMaintain(item)) {
+			rescaleVanillaDamage(item, previousType, tags);
 			return;
 		}
 		int componentMax = previousMaxDamage == null ? 0 : previousMaxDamage;
@@ -66,6 +67,83 @@ public final class CosmeticHelmetFix {
 		damageable.setDamage(expected);
 		item.setItemMeta(damageable);
 		MmoItemTagPreserver.restoreMissing(item, tags);
+	}
+
+	/**
+	 * A skin that changes the material keeps the old vanilla damage, but the bar it counts against is the new
+	 * material's. A crafted piece leaving a hat look (bar sized to MMOItems, e.g. 187 of 1003) for leather (55)
+	 * then reads as broken. Drops the bar a hat look added, then maps the MMOItems durability onto the new bar the
+	 * way MMOItems does, so pieces without MMOItems durability (mage weapons wear the vanilla bar) are left alone.
+	 */
+	static boolean rescaleVanillaDamage(ItemStack item, Material previousType, List<SavedTag> tags) {
+		if (item == null || item.getType().isAir()) {
+			return false;
+		}
+		int customMax = MmoItemTagPreserver.customMaxDurability(item);
+		if (customMax <= 0 || !(item.getItemMeta() instanceof Damageable damageable)) {
+			return false;
+		}
+		boolean changed = false;
+		if (SkinnedArmorDurability.isCosmeticHelmetMaterial(previousType) && damageable.hasMaxDamage()
+				&& damageable.getMaxDamage() == customMax) {
+			damageable.setMaxDamage(null);
+			changed = true;
+		}
+		changed |= alignDamage(item, damageable, 1);
+		if (!changed) {
+			return false;
+		}
+		item.setItemMeta(damageable);
+		MmoItemTagPreserver.restoreMissing(item, tags);
+		return true;
+	}
+
+	/** An MMOItems piece whose vanilla bar reads broken (at or past its end) while MMOItems durability is left. */
+	public static boolean showsFalseBreak(ItemStack item) {
+		if (item == null || item.getType().isAir()) {
+			return false;
+		}
+		int customMax = MmoItemTagPreserver.customMaxDurability(item);
+		if (customMax <= 0 || currentDurability(item, customMax) <= 0
+				|| !(item.getItemMeta() instanceof Damageable damageable)) {
+			return false;
+		}
+		int max = vanillaMax(item, damageable);
+		return max > 0 && damageable.getDamage() >= max;
+	}
+
+	/** Puts the vanilla bar of a {@link #showsFalseBreak} piece back in line with its MMOItems durability. */
+	public static boolean repairFalseBreak(ItemStack item) {
+		if (!showsFalseBreak(item)) {
+			return false;
+		}
+		List<SavedTag> tags = MmoItemTagPreserver.snapshot(item);
+		Damageable damageable = (Damageable) item.getItemMeta();
+		alignDamage(item, damageable, 0);
+		item.setItemMeta(damageable);
+		MmoItemTagPreserver.restoreMissing(item, tags);
+		return true;
+	}
+
+	private static boolean alignDamage(ItemStack item, Damageable damageable, int tolerance) {
+		int max = vanillaMax(item, damageable);
+		if (max <= 0) {
+			return false;
+		}
+		int expected = Math.min(expectedDamage(item, max, 0), max - 1);
+		if (Math.abs(damageable.getDamage() - expected) <= tolerance) {
+			return false;
+		}
+		damageable.setDamage(expected);
+		return true;
+	}
+
+	private static int vanillaMax(ItemStack item, Damageable damageable) {
+		return damageable.hasMaxDamage() ? damageable.getMaxDamage() : item.getType().getMaxDurability();
+	}
+
+	private static int currentDurability(ItemStack item, int customMax) {
+		return MmoItemTagPreserver.hasDurabilityValue(item) ? MmoItemTagPreserver.customDurability(item) : customMax;
 	}
 
 	private static boolean applyProfile(ItemStack item, int componentMax, int materialMax, int fallbackDamage,
