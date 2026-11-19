@@ -43,6 +43,11 @@ public final class Characters {
         return provider().flatMap(identity -> identity.info(characterId));
     }
 
+    /** @see CharacterIdentity#publicName(UUID) */
+    public static Optional<String> publicName(UUID characterId) {
+        return provider().flatMap(identity -> identity.publicName(characterId));
+    }
+
     /** @see CharacterIdentity#deathId(UUID) */
     public static Optional<UUID> deathId(UUID characterId) {
         return provider().flatMap(identity -> identity.deathId(characterId));

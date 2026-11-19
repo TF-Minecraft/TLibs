@@ -82,8 +82,19 @@ public interface CharacterIdentity {
     }
 
     /**
+     * The name the character goes by in public, online or offline: its alias, or its real name
+     * when it has none. Empty if the character is unknown. Masks and temporary aliases never
+     * count; {@link #displayName(Player)} includes them for a player online now.
+     *
+     * <p>Providers that keep no aliases answer with the real name.
+     */
+    default Optional<String> publicName(UUID characterId) {
+        return info(characterId).map(CharacterInfo::name);
+    }
+
+    /**
      * The name other players see now, including masks and temporary aliases. Use
-     * {@link CharacterInfo#name()} for the real name.
+     * {@link CharacterInfo#name()} for the real name and {@link #publicName(UUID)} for the alias.
      */
     String displayName(Player player);
 }
