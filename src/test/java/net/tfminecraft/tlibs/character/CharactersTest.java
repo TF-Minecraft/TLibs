@@ -46,6 +46,7 @@ class CharactersTest {
         assertEquals(Optional.empty(), Characters.currentSession(player));
         assertFalse(Characters.isCurrent(session));
         assertEquals(Optional.empty(), Characters.info(ref.characterId()));
+        assertEquals(Optional.empty(), Characters.publicName(ref.characterId()));
         assertEquals(Optional.empty(), Characters.characters(ref.ownerId()));
         assertEquals(Optional.empty(), Characters.lastPlayed(ref.ownerId()));
         assertEquals(Optional.empty(), Characters.legacyHeir(ref.ownerId()));
@@ -79,6 +80,7 @@ class CharactersTest {
         when(identity.characters(ref.ownerId())).thenReturn(Optional.of(List.of(info)));
         when(identity.lastPlayed(ref.ownerId())).thenReturn(Optional.of(info));
         when(identity.displayName(player)).thenReturn("Masked stranger");
+        when(identity.publicName(ref.characterId())).thenReturn(Optional.of("Hooded Stranger"));
         when(identity.legacyHeir(ref.ownerId())).thenReturn(Optional.of(ref));
         when(identity.legacyHeirsReady()).thenReturn(true);
         UUID deathId = UUID.randomUUID();
@@ -97,6 +99,17 @@ class CharactersTest {
         assertEquals(Optional.of(deathId), Characters.deathId(ref.characterId()));
         assertEquals(List.of(info), Characters.findByName("alice"));
         assertEquals("Masked stranger", Characters.displayName(player));
+        assertEquals(Optional.of("Hooded Stranger"), Characters.publicName(ref.characterId()));
+    }
+
+    @Test
+    void providersWithoutAliasesGiveTheRealNameAsThePublicName() {
+        CharacterIdentity identity = mock(CharacterIdentity.class);
+        when(identity.info(ref.characterId())).thenReturn(Optional.of(info));
+        when(identity.publicName(any())).thenCallRealMethod();
+
+        assertEquals(Optional.of("Alice"), identity.publicName(ref.characterId()));
+        assertEquals(Optional.empty(), identity.publicName(UUID.randomUUID()));
     }
 
     @Test
@@ -162,6 +175,7 @@ class CharactersTest {
                 () -> Characters.currentSession(player),
                 () -> Characters.isCurrent(session),
                 () -> Characters.info(ref.characterId()),
+                () -> Characters.publicName(ref.characterId()),
                 () -> Characters.characters(ref.ownerId()),
                 () -> Characters.lastPlayed(ref.ownerId()),
                 () -> Characters.legacyHeir(ref.ownerId()),
